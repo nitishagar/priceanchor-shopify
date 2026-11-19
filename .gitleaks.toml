@@ -1,0 +1,14 @@
+title = "PriceAnchor gitleaks config"
+
+# Without this, a custom config REPLACES all built-in rules and the scan
+# can never fail — the allowlist below only narrows defaults.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "test fixtures and public identifiers"
+regexes = [
+  '''test-cron-secret''',
+  '''postgresql://test:test@localhost''',
+  '''98dff8002e6a1ba54876b421716e6958''',
+]

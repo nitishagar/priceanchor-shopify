@@ -1,4 +1,5 @@
 import { reactRouter } from "@react-router/dev/vite";
+import { cloudflare } from "@cloudflare/vite-plugin";
 import { defineConfig, type UserConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
@@ -49,6 +50,11 @@ export default defineConfig({
     },
   },
   plugins: [
+    // cloudflare() MUST come before reactRouter() (cf-ref order): it claims
+    // the SSR environment so server code builds for the Workers runtime.
+    // NOTE: cf-ref (v8) names this environment "ssr", but reactRouter v7.12
+    // reads the server manifest from dist/server/ — hence "server" here.
+    cloudflare({ viteEnvironment: { name: "server" } }),
     reactRouter(),
     tsconfigPaths(),
   ],

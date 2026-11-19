@@ -4,7 +4,7 @@ import { handleProductPriceCapture } from "../services/price-webhook.server";
 // I17: concurrent captures must collect-not-throw with consistent accounting.
 // NOTE on the race itself: two racing CHANGED deliveries for one variant may
 // double-insert (no unique constraint, no cross-isolate serialization
-// possible) — documented, not widened by migration (SST Lambda also runs
+// possible) — documented, not widened by migration (Lambda also runs
 // concurrent instances). Asserting exact row counts would be flaky-or-vacuous,
 // so this suite asserts the deterministic part: N parallel captures complete
 // with N total outcomes and errors in-band, never thrown.

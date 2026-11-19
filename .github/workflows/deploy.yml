@@ -14,17 +14,13 @@ jobs:
           cache: "npm"
       - run: npm ci
       - run: npm run validate
+      - name: Fail on placeholder URLs
+        run: bash scripts/check-placeholders.sh
       - name: Run database migrations
         run: npm run db:migrate:pg
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      - name: Deploy to AWS
-        run: npx sst deploy --stage production
+      - name: Deploy to Cloudflare Workers
+        run: npm run build && npx wrangler deploy --config wrangler.deploy.jsonc
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: us-east-1
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          SHOPIFY_API_KEY: ${{ secrets.SHOPIFY_API_KEY }}
-          SHOPIFY_API_SECRET: ${{ secrets.SHOPIFY_API_SECRET }}
-          SHOPIFY_APP_URL: ${{ secrets.SHOPIFY_APP_URL }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

@@ -9,7 +9,6 @@
     "deploy": "shopify app deploy",
     "config:use": "shopify app config use",
     "env": "shopify app env",
-    "start": "react-router-serve ./build/server/index.js",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "shopify": "shopify",
     "graphql-codegen": "graphql-codegen",
@@ -22,8 +21,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:migrate:pg": "tsx scripts/migrate-pg.ts",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio",
-    "deploy:sst": "npx sst deploy"
+    "db:studio": "drizzle-kit studio"
   },
   "type": "module",
   "engines": {
@@ -34,7 +32,6 @@
     "@react-router/dev": "^7.12.0",
     "@react-router/fs-routes": "^7.12.0",
     "@react-router/node": "^7.12.0",
-    "@react-router/serve": "^7.12.0",
     "@shopify/app-bridge-react": "^4.2.4",
     "@shopify/shopify-app-react-router": "^1.1.0",
     "@shopify/shopify-app-session-storage-drizzle": "^4.0.0",
@@ -69,7 +66,6 @@
     "jsdom": "^29.0.1",
     "pg": "^8.20.0",
     "prettier": "^3.6.2",
-    "sst": "^4.5.9",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite": "^6.3.6",
