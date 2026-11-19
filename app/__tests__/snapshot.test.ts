@@ -121,6 +121,29 @@ describe("snapshotShop", () => {
     expect(graphql).toHaveBeenCalledTimes(SNAPSHOT_MAX_PAGES);
   });
 
+  it("caps a run at literally 10 pages of 50 (500 products)", async () => {
+    // Literal pin: the symbolic assertion above shares its constant with the
+    // implementation, so only this test would catch a cap change (I19).
+    expect(SNAPSHOT_MAX_PAGES).toBe(10);
+    expect(SNAPSHOT_PAGE_SIZE).toBe(50);
+    const graphql = vi.fn().mockResolvedValue(productsPage([], true, "cursor"));
+    const capture = vi.fn().mockResolvedValue(CAPTURE_OK);
+
+    await snapshotShop("s.myshopify.com", { graphql }, {} as never, capture as never);
+
+    expect(graphql).toHaveBeenCalledTimes(10);
+  });
+
+  it("fetches at most 100 variants per product", async () => {
+    const graphql = vi.fn().mockResolvedValue(productsPage([], false));
+    const capture = vi.fn().mockResolvedValue(CAPTURE_OK);
+
+    await snapshotShop("s.myshopify.com", { graphql }, {} as never, capture as never);
+
+    expect(graphql).toHaveBeenCalledTimes(1);
+    expect(String(graphql.mock.calls[0][0])).toContain("variants(first: 100)");
+  });
+
   it("records GraphQL failures and keeps partial progress", async () => {
     const graphql = vi.fn().mockRejectedValue(new Error("throttled"));
     const capture = vi.fn();

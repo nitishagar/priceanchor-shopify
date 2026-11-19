@@ -186,6 +186,14 @@ describe("managedPricingUrl", () => {
     );
   });
 
+  it("renders a valid billing link for the default handle", () => {
+    // Guards the omitted-HANDLE fallback: with no SHOPIFY_APP_HANDLE var,
+    // loaders pass "priceanchor" and merchants get a working billing link.
+    expect(managedPricingUrl("priceanchor")).toBe(
+      "shopify://admin/charges/priceanchor/pricing_plans",
+    );
+  });
+
   it("uses the given handle", () => {
     expect(managedPricingUrl("priceanchor-test")).toBe(
       "shopify://admin/charges/priceanchor-test/pricing_plans",
