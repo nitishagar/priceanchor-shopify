@@ -92,11 +92,11 @@ export default function Support() {
       <ul>
         <li>
           <strong>Email:</strong>{" "}
-          <a href="mailto:support@priceanchor.example.com" style={linkStyle}>support@priceanchor.example.com</a>
+          <a href="mailto:support@applair.in" style={linkStyle}>support@applair.in</a>
         </li>
         <li>
           <strong>GitHub:</strong>{" "}
-          <a href="https://github.com/nitishagar/priceanchor/issues" style={linkStyle} target="_blank" rel="noopener noreferrer">
+          <a href="https://github.com/nitishagar/priceanchor-shopify/issues" style={linkStyle} target="_blank" rel="noopener noreferrer">
             Report an issue
           </a>
         </li>

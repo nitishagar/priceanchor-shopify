@@ -42,8 +42,8 @@ export default function PrivacyPolicy() {
 
       <h2 style={{ fontSize: 20, marginTop: 32 }}>3. Data Storage and Security</h2>
       <p>
-        Your data is stored in encrypted databases hosted on <strong>Amazon Web Services (AWS)</strong> in
-        the <strong>us-east-1</strong> region and <strong>Neon PostgreSQL</strong> (cloud-hosted PostgreSQL).
+        Your data is stored in encrypted databases: the app runs on <strong>Cloudflare Workers</strong>
+        and data persists in <strong>Neon PostgreSQL</strong> (cloud-hosted PostgreSQL).
         All data is transmitted over HTTPS/TLS. Shopify session tokens are stored in our database
         via Shopify&apos;s official session storage library and are used only to authenticate API calls on your store&apos;s behalf.
       </p>
@@ -51,7 +51,7 @@ export default function PrivacyPolicy() {
       <h2 style={{ fontSize: 20, marginTop: 32 }}>4. Data Sharing</h2>
       <p>
         <strong>We do not sell, rent, or share your data with any third parties.</strong> Your data is
-        only processed by our infrastructure providers (AWS, Neon) as necessary to operate the service.
+        only processed by our infrastructure providers (Cloudflare, Neon) as necessary to operate the service.
         These providers act as data processors under our direction and are bound by their own privacy
         and security commitments.
       </p>
@@ -95,7 +95,7 @@ export default function PrivacyPolicy() {
       </p>
       <p style={{ marginTop: 8 }}>
         <strong>Email:</strong>{" "}
-        <a href="mailto:privacy@priceanchor.example.com" style={{ color: "#2563eb" }}>privacy@priceanchor.example.com</a>
+        <a href="mailto:privacy@applair.in" style={{ color: "#2563eb" }}>privacy@applair.in</a>
       </p>
 
       <footer style={{ marginTop: 48, paddingTop: 24, borderTop: "1px solid #e5e5e5", color: "#999", fontSize: 14 }}>

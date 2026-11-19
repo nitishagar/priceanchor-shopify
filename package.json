@@ -2,7 +2,8 @@
   "name": "priceanchor",
   "private": true,
   "scripts": {
-    "build": "react-router build",
+    "build": "react-router build && vite build --config vite.worker.config.ts",
+    "build:worker": "vite build --config vite.worker.config.ts",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",
@@ -43,7 +44,6 @@
     "vite-tsconfig-paths": "^5.1.4"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.70.0",
     "@cloudflare/workers-types": "^5.20261119.1",
     "@shopify/api-codegen-preset": "^1.2.0",
     "@shopify/polaris-types": "^1.0.1",

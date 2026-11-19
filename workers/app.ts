@@ -1,10 +1,13 @@
-import { createRequestHandler } from "react-router";
+import { createRequestHandler, type ServerBuild } from "react-router";
+// Alias to the built server manifest (see tsconfig paths + env.d.ts ambient
+// declaration). @react-router/dev v7 provides NO Vite-built worker entry, so
+// a dedicated worker build (vite.worker.config.ts) bundles this file against
+// the react-router build output. Deploy order: npm run build, then deploy.
+import * as serverBuild from "@priceanchor/server-build";
 
 const requestHandler = createRequestHandler(
-  // Virtual module provided by @react-router/dev at build time.
-  // eslint-disable-next-line import/no-unresolved
-  () => import("virtual:react-router/server-build"),
-  import.meta.env.MODE,
+  serverBuild as unknown as ServerBuild,
+  import.meta.env?.MODE ?? "production",
 );
 
 // Deviation from the cf-ref template (which passes NO context): every

@@ -14,3 +14,11 @@ interface Env {
   SHOP_CUSTOM_DOMAIN?: string;
   SHOPIFY_APP_HANDLE?: string;
 }
+
+// Build-output alias for the Worker entry: resolves at typecheck time even
+// on fresh clones where dist/ doesn't exist yet (esbuild resolves the same
+// alias to the real file at deploy time, after `npm run build`).
+declare module "@priceanchor/server-build" {
+  const routes: unknown;
+  const entry: unknown;
+}

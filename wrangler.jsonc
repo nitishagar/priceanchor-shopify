@@ -7,7 +7,10 @@
   "name": "priceanchor",
   "compatibility_date": "2026-11-19",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "./workers/app.ts",
+  "main": "./build/worker/index.js",
+  "assets": {
+    "directory": "./build/client"
+  },
   "vars": {
     "SCOPES": "read_products,write_products",
     "SHOPIFY_APP_URL": "https://priceanchor.applair.in"

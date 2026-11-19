@@ -19,7 +19,7 @@ export default function PrivacyPolicyPage() {
         </s-paragraph>
         <s-paragraph>
           <s-text type="strong">Data Storage:</s-text> Data is stored securely in encrypted
-          databases hosted on AWS. We do not sell or share your data with third parties.
+          databases hosted on Cloudflare Workers. We do not sell or share your data with third parties.
         </s-paragraph>
         <s-paragraph>
           <s-text type="strong">Data Retention:</s-text> Store settings are retained
@@ -31,7 +31,7 @@ export default function PrivacyPolicyPage() {
         </s-paragraph>
         <s-paragraph>
           <s-text type="strong">Contact:</s-text> For privacy inquiries, email
-          privacy@priceanchor.example.com.
+          privacy@applair.in.
         </s-paragraph>
       </s-section>
     </s-page>

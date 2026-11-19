@@ -25,9 +25,8 @@ shopt -s nullglob
 targets=("$@")
 if [ "${#targets[@]}" -eq 0 ]; then
   # shellcheck disable=SC2206
-  # dist/ is the buildDirectory (react-router.config.ts); the Cloudflare
-  # plugin redirects all build output there.
-  targets=(dist/client/assets/*.js)
+  # build/ is the stock react-router buildDirectory.
+  targets=(build/client/assets/*.js)
 fi
 if [ "${#targets[@]}" -eq 0 ]; then
   echo "LEAK-CHECK misconfigured: no client assets found — run build first"

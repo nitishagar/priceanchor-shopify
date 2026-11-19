@@ -46,8 +46,8 @@ test("pricing tiers match the app billing ($3.99 Standard / $5.99 Unlimited)", (
 test("support page has setup steps, contact, and repo link", () => {
   const html = bodies["support.html"];
   assert.ok(html.includes("Lowest price"));
-  assert.ok(html.includes("support@priceanchor.example.com"));
-  assert.ok(html.includes("github.com/nitishagar/priceanchor/issues"));
+  assert.ok(html.includes("support@applair.in"));
+  assert.ok(html.includes("github.com/nitishagar/priceanchor-shopify/issues"));
 });
 
 test("privacy page covers collection, retention, rights, and contact", () => {
@@ -56,7 +56,7 @@ test("privacy page covers collection, retention, rights, and contact", () => {
     "do not collect any customer data",
     "Retention",
     "Your rights",
-    "privacy@priceanchor.example.com",
+    "privacy@applair.in",
   ]) {
     assert.ok(html.includes(needle), `privacy: ${needle}`);
   }

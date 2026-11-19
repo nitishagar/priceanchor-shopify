@@ -1,5 +1,4 @@
 import { reactRouter } from "@react-router/dev/vite";
-import { cloudflare } from "@cloudflare/vite-plugin";
 import { defineConfig, type UserConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
@@ -49,12 +48,11 @@ export default defineConfig({
       allow: ["app", "node_modules"],
     },
   },
+  // NOTE: no @cloudflare/vite-plugin here on purpose. It buys workerd `vite
+  // dev` (unused — local dev is `shopify app dev`) but breaks `react-router
+  // build`: it redirects output to dist/ and validates wrangler `main` at
+  // config time. The Worker bundle is built separately (vite.worker.config).
   plugins: [
-    // cloudflare() MUST come before reactRouter() (cf-ref order): it claims
-    // the SSR environment so server code builds for the Workers runtime.
-    // NOTE: cf-ref (v8) names this environment "ssr", but reactRouter v7.12
-    // reads the server manifest from dist/server/ — hence "server" here.
-    cloudflare({ viteEnvironment: { name: "server" } }),
     reactRouter(),
     tsconfigPaths(),
   ],

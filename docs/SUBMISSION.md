@@ -6,13 +6,14 @@ there is no auto-submit script, by design.
 
 ## 1. URLs & email
 
-- [ ] Decide the app domain (or use the SST CloudFront URL); privacy + support
-      are served by the app itself (`/privacy`, `/support`) and mirrored in
-      `packages/site/`.
-- [ ] Support contact `support@priceanchor.example.com`; privacy contact
-      `privacy@priceanchor.example.com` (replace example.com with the real domain).
-- [ ] Backend App URL comes from the first `sst deploy` CloudFront URL — copy it into
-      `shopify.app.toml` (`application_url` + `redirect_urls`) and the Partner Dashboard.
+- [x] App origin is `https://priceanchor.applair.in` (Cloudflare Worker +
+      custom domain); privacy + support are served by the app itself
+      (`/privacy`, `/support`) and mirrored in `packages/site/`.
+- [x] Support contact `support@applair.in`; privacy contact
+      `privacy@applair.in`; issues at
+      `github.com/nitishagar/priceanchor-shopify/issues`.
+- [x] `shopify.app.toml` (`application_url` + `redirect_urls`) carries the
+      origin; the Partner Dashboard URLs match it field-for-field.
 
 ## 2. Partner Dashboard app
 
@@ -28,12 +29,17 @@ there is no auto-submit script, by design.
 
 ## 3. Secrets & deploy
 
-- [ ] GitHub secrets: `DATABASE_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
-      `SHOPIFY_API_KEY`, `SHOPIFY_API_SECRET`, `SHOPIFY_APP_URL`, `APP_URL`
-      (same deployed base URL), `CRON_SECRET` (`openssl rand -hex 32`; must
-      match the app's `CRON_SECRET` env for `POST /api/snapshot`).
-- [ ] `npx sst deploy --stage production` → verify the URL serves the app.
-- [ ] Deploy the theme extension: `shopify app deploy`.
+- [x] GitHub Secrets (exactly 4): `DATABASE_URL` (Neon `priceanchor`
+      project, pooled URI), `CLOUDFLARE_API_TOKEN`, `APP_URL`
+      (`https://priceanchor.applair.in`), `CRON_SECRET`.
+- [x] Worker secrets (exactly 4, same names where shared):
+      `DATABASE_URL`, `SHOPIFY_API_KEY`, `SHOPIFY_API_SECRET`,
+      `CRON_SECRET`. GitHub `CRON_SECRET` and Worker `CRON_SECRET`
+      MUST match (single generation, pasted twice) — the snapshot
+      workflow Bearer vs the route compare.
+- [x] `npm run build && npx wrangler deploy` → `priceanchor` Worker +
+      `priceanchor.applair.in` custom domain serves the app.
+- [ ] Deploy config + theme extension: `shopify app deploy`.
 - [ ] Install on a dev store; change a price; verify history + the storefront
       lowest-price line. No "Shopify" in URLs/emails; icon 1200x1200.
 

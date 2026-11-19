@@ -13,13 +13,13 @@ describe("env isolation across overlapping requests", () => {
     DATABASE_URL: "postgresql://a:a@localhost/a",
     SHOPIFY_API_KEY: "key-a",
     SHOPIFY_API_SECRET: "secret-a",
-    SHOPIFY_APP_URL: "https://a.example.com",
+    SHOPIFY_APP_URL: "https://a.test",
   };
   const envB: ServerEnv = {
     DATABASE_URL: "postgresql://b:b@localhost/b",
     SHOPIFY_API_KEY: "key-b",
     SHOPIFY_API_SECRET: "secret-b",
-    SHOPIFY_APP_URL: "https://b.example.com",
+    SHOPIFY_APP_URL: "https://b.test",
   };
 
   it("isolates db clients across interleaved flows", async () => {
