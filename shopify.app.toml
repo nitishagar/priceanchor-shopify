@@ -1,51 +1,20 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-# NOTE: Fill in client_id after creating the app in the Partner Dashboard
-# (see docs/SUBMISSION.md). Do not commit secrets to this file.
-client_id = ""
+client_id = "98dff8002e6a1ba54876b421716e6958"
 name = "PriceAnchor"
-# Placeholder backend URL — replace with the SST CloudFront URL after the first
-# `sst deploy` (see docs/SUBMISSION.md).
-application_url = "https://priceanchor.example.com"
+application_url = "https://example.com"
 embedded = true
 
-[build]
-automatically_update_urls_on_dev = true
-
 [webhooks]
-api_version = "2026-04"
-
-  [[webhooks.subscriptions]]
-  topics = [ "app/uninstalled" ]
-  uri = "/webhooks/app/uninstalled"
-
-  [[webhooks.subscriptions]]
-  topics = [ "app/scopes_update" ]
-  uri = "/webhooks/app/scopes_update"
-
-  [[webhooks.subscriptions]]
-  topics = [ "app_subscriptions/update" ]
-  uri = "/webhooks/app-subscriptions-update"
-
-  [[webhooks.subscriptions]]
-  topics = [ "products/create" ]
-  uri = "/webhooks/products-create"
-
-  [[webhooks.subscriptions]]
-  topics = [ "products/update" ]
-  uri = "/webhooks/products-update"
-
-  [[webhooks.subscriptions]]
-  topics = [ "products/delete" ]
-  uri = "/webhooks/products-delete"
+api_version = "2027-01"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "read_products,write_products"
 
-  [[webhooks.subscriptions]]
-  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
-  uri = "/webhooks"
-
 [auth]
-redirect_urls = [ "https://priceanchor.example.com/api/auth" ]
+redirect_urls = [ "https://example.com/api/auth" ]
+
+[build]
+include_config_on_deploy = true
+automatically_update_urls_on_dev = true
