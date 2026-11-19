@@ -1,0 +1,12 @@
+{
+  "name": "@priceanchor/site",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.mjs",
+    "smoke": "bash scripts/smoke-site.sh"
+  }
+}

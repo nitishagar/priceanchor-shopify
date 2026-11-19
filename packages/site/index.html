@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PriceAnchor — EU Omnibus lowest-price tracking for Shopify</title>
+  <meta name="description" content="PriceAnchor is a Shopify app that records per-market price history and renders the statutory lowest price of the last 30 days next to every reduction. EU Omnibus Art 6a ready." />
+  <link rel="stylesheet" href="/tokens.css" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="wordmark" href="/"><span class="prompt">$</span> priceanchor</a>
+    <nav>
+      <a href="/pricing.html">Pricing</a>
+      <a href="/support.html">Support</a>
+      <a href="/privacy.html">Privacy</a>
+      <button class="theme-toggle" id="theme-toggle" type="button">light</button>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <div class="hero">
+      <div>
+        <h1>Every reduction, anchored to its real prior price.</h1>
+        <p class="lede">
+          PriceAnchor is a Shopify app for EU Omnibus compliance. It records
+          your price history per variant and per market, then renders the
+          statutory <i>lowest price of the last 30 days</i> next to every sale —
+          with the “% off” computed from that prior price, never from a stale
+          compare-at anchor.
+        </p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="/pricing.html">See pricing</a>
+          <a class="btn btn-ghost" href="/support.html">How setup works</a>
+        </div>
+      </div>
+      <div class="terminal" aria-label="Example PriceAnchor output">
+        <div><span class="p">$</span> priceanchor render --price 14.99 --prior-30d 19.99</div>
+        <div><span class="dim">DE · EUR</span> → Lowest price in the last 30 days: 19,99&nbsp;€ (−25%)</div>
+        <div><span class="dim">FR · EUR</span> → lowest_price_fr: separate history per market</div>
+        <div class="ok">✓ Art 6a prior price · ✓ Aldi-rule % off · ✓ no FX</div>
+      </div>
+    </div>
+
+    <section class="block" aria-label="Live demo">
+      <h2>Try the actual engine</h2>
+      <p>
+        This demo runs the same <code>priceanchor.js</code> file the theme extension
+        ships — no server, no mock. The sample prior price (€19.99, last 30 days)
+        is fixed; change the current price and watch the line re-render. Flip the
+        market to see the US §17501-safe framing.
+      </p>
+      <div class="demo">
+        <div class="demo-grid">
+          <div class="field">
+            <label for="d-price">Current price (EUR)</label>
+            <input id="d-price" type="number" min="0" step="any" value="14.99" />
+          </div>
+          <div class="field">
+            <label for="d-prior">Prior price, 30d (EUR)</label>
+            <input id="d-prior" type="number" min="0" step="any" value="19.99" />
+          </div>
+          <div class="field">
+            <label for="d-market">Shopper market</label>
+            <select id="d-market">
+              <option value="DE" selected>Germany (EU mode)</option>
+              <option value="US">United States (US mode)</option>
+            </select>
+          </div>
+        </div>
+        <div class="demo-out" id="demo-out" aria-live="polite">
+          <div
+            class="priceanchor"
+            data-priceanchor
+            id="demo-block"
+            data-prior='{"lowestMinor":1999,"currency":"EUR","capturedAt":"2026-11-10T10:00:00.000Z","windowDays":30}'
+            data-former='{"lowestMinor":1999,"currency":"EUR","lastOfferedAt":"2026-10-04T10:00:00.000Z","windowDays":90}'
+            data-country="DE"
+            data-variant="11"
+            data-price-minor="1499"
+            data-currency="EUR"
+            data-show-percent="true"
+            data-l10n-prefix="Lowest price in the last"
+            data-l10n-infix="days"
+          >
+            <span class="priceanchor__label">Lowest price:</span>
+            <span class="priceanchor__line" data-priceanchor-line></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2>Setup in three steps</h2>
+      <ol class="steps">
+        <li>
+          <strong>Install PriceAnchor.</strong> Price history starts recording
+          automatically from product webhooks, plus a daily snapshot backup.
+        </li>
+        <li>
+          <strong>Let history accumulate.</strong> The 30-day prior price needs
+          observations; the Products page shows what has been captured so far.
+        </li>
+        <li>
+          <strong>Add the “Lowest price” block</strong> to your product template.
+          Shoppers see the statutory line next to every reduction, per market.
+        </li>
+      </ol>
+    </section>
+
+    <section class="block">
+      <h2>Pricing that undercuts the suites</h2>
+      <p>
+        Omnibus suites charge per market or per product tier. PriceAnchor
+        does one thing well, starting free.
+      </p>
+      <div class="tiers">
+        <div class="tier">
+          <h3>Free</h3>
+          <p class="price">$0 <small>/mo</small></p>
+          <ul>
+            <li>Up to 25 tracked products</li>
+            <li>30-day lowest-price tracking</li>
+            <li>Lowest-price theme block</li>
+          </ul>
+        </div>
+        <div class="tier hl">
+          <h3>Standard</h3>
+          <p class="price">$3.99 <small>/mo</small></p>
+          <ul>
+            <li>Up to 250 tracked products</li>
+            <li>CSV evidence export + stale-sale flagging</li>
+            <li>Everything in Free</li>
+          </ul>
+        </div>
+        <div class="tier">
+          <h3>Unlimited</h3>
+          <p class="price">$5.99 <small>/mo</small></p>
+          <ul>
+            <li>Unlimited tracked products</li>
+            <li>PDF export + stale-sale auto-clear</li>
+            <li>Priority support</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2>Honest constraints</h2>
+      <dl class="faq">
+        <dt>Does PriceAnchor convert currency?</dt>
+        <dd>No. Each market keeps its own price history in its own currency. A
+        German price drop never sets the French reference price.</dd>
+        <dt>Is the % off taken from compare-at?</dt>
+        <dd>No. Compare-at is a free-text merchant field with no link to the
+        Art 6a prior price. The % off is computed from the 30-day prior price
+        (Aldi rule); the stale-sale guard flags old compare-at anchors.</dd>
+        <dt>Which themes work?</dt>
+        <dd>All Shopify OS 2.0 themes. Vintage themes are not supported.</dd>
+        <dt>What data leaves my store?</dt>
+        <dd>Almost none: store domain, plan state, and price snapshots needed for
+        the history. Lowest prices live in your products&apos; metafields. No
+        customer data, ever.</dd>
+      </dl>
+    </section>
+  </main>
+
+  <footer class="site">
+    <span>$ priceanchor — omnibus-ready lowest-price tracking</span>
+    <span>
+      <a href="/pricing.html">Pricing</a>
+      <a href="/support.html">Support</a>
+      <a href="/privacy.html">Privacy</a>
+    </span>
+  </footer>
+
+  <script src="/engine/priceanchor.js"></script>
+  <script src="/demo.js"></script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy Policy — PriceAnchor</title>
+  <meta name="description" content="PriceAnchor privacy policy: what merchant data we collect, how we use it, and your rights." />
+  <link rel="stylesheet" href="/tokens.css" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="wordmark" href="/"><span class="prompt">$</span> priceanchor</a>
+    <nav>
+      <a href="/pricing.html">Pricing</a>
+      <a href="/support.html">Support</a>
+      <a href="/privacy.html">Privacy</a>
+    </nav>
+  </header>
+
+  <main class="wrap prose">
+    <h1>Privacy Policy</h1>
+    <p class="updated">Last updated: November 19, 2026</p>
+
+    <p>PriceAnchor (“we”, “our”, “us”) operates the PriceAnchor Shopify application. This policy
+    explains what data we collect from merchants, how we use it, and your rights.</p>
+
+    <h2>1. Data we collect</h2>
+    <ul>
+      <li><strong>Store information:</strong> store domain, plan tier, display preferences.</li>
+      <li><strong>Product data:</strong> product/variant identifiers and price snapshots, read only to build per-market price history.</li>
+      <li><strong>Lowest-price metafields:</strong> computed prior prices are stored as app-owned metafields on your own products.</li>
+    </ul>
+    <p><strong>We do not collect any customer data.</strong> Storefront rendering reads your own product metafields in the shopper&apos;s browser.</p>
+
+    <h2>2. How we use your data</h2>
+    <ul>
+      <li>Recording price history and computing per-market prior prices.</li>
+      <li>Writing lowest-price metafields to your products and clearing stale compare-at anchors (when enabled).</li>
+      <li>Enforcing plan limits and showing plan status.</li>
+    </ul>
+
+    <h2>3. Storage and security</h2>
+    <p>Data is stored encrypted on Amazon Web Services (us-east-1) and Neon PostgreSQL,
+    transmitted over HTTPS/TLS. Shopify session tokens use Shopify&apos;s official session
+    storage and authenticate API calls on your behalf only.</p>
+
+    <h2>4. Data sharing</h2>
+    <p><strong>We do not sell, rent, or share your data with third parties.</strong> Infrastructure
+    providers (AWS, Neon) process data only as necessary to operate the service.</p>
+
+    <h2>5. Retention</h2>
+    <ul>
+      <li><strong>While installed:</strong> settings and plan state for the subscription duration.</li>
+      <li><strong>After uninstall:</strong> automatic deletion once Shopify sends the data-erasure
+      request. App-owned lowest-price metafields stay on your products until you remove them.</li>
+    </ul>
+
+    <h2>6. Your rights</h2>
+    <p>Access, correction, deletion, and portability under GDPR, CCPA/CPRA, and similar laws.
+    Uninstalling triggers automatic deletion.</p>
+
+    <h2>7. Cookies and tracking</h2>
+    <p>No cookies, analytics, or third-party trackers. Admin auth uses Shopify session tokens.</p>
+
+    <h2>8. Changes</h2>
+    <p>Updates appear here with a new “Last updated” date.</p>
+
+    <h2>9. Contact</h2>
+    <p><strong>Email:</strong> <a href="mailto:privacy@priceanchor.example.com">privacy@priceanchor.example.com</a></p>
+  </main>
+
+  <footer class="site">
+    <span>$ priceanchor — omnibus-ready lowest-price tracking</span>
+    <span>
+      <a href="/pricing.html">Pricing</a>
+      <a href="/support.html">Support</a>
+      <a href="/privacy.html">Privacy</a>
+    </span>
+  </footer>
+</body>
+</html>

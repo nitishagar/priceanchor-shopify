@@ -1,0 +1,27 @@
+# Daily price-snapshot backup — catches catalog changes missed by webhooks.
+# Calls the app's authenticated snapshot endpoint; all capture logic lives
+# in app/services/snapshot.server.ts. Required secrets: APP_URL (deployed
+# app base URL, no trailing slash), CRON_SECRET (matches the app env).
+name: Daily snapshot
+
+on:
+  schedule:
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Trigger snapshot run
+        run: |
+          http=$(curl -sS -o /tmp/snapshot.json -w "%{http_code}" \
+            -X POST "$APP_URL/api/snapshot" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            --max-time 600)
+          cat /tmp/snapshot.json
+          test "$http" = "200"
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}

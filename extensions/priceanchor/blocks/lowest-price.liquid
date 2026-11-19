@@ -1,0 +1,122 @@
+{% comment %}
+  PriceAnchor — market-adaptive reference-price line.
+  EU visitors: statutory lowest price of the last 30 days (Omnibus Art 6a),
+  rendered from the app-owned `$app:priceanchor` metafield
+  `lowest_price_<market>` (JSON: {"lowestMinor":1299,"currency":"EUR",
+  "capturedAt":"...","windowDays":30}). The % off is computed from that
+  prior price (Aldi rule), never from the live compare_at_price.
+  US visitors: §17501-safe former-price framing from `former_price_<market>`
+  (JSON: {"lowestMinor":9800,"currency":"USD","lastOfferedAt":"...",
+  "windowDays":90}) — "Previously $98.00 — last offered Oct 2026".
+  The block hides itself when no reduction applies.
+{% endcomment %}
+
+{%- liquid
+  assign current_variant = product.selected_or_first_available_variant
+  assign country_code = localization.country.iso_code | upcase | default: ''
+  assign market_key = localization.country.iso_code | downcase | default: 'default'
+  assign prior_key = 'lowest_price_' | append: market_key
+  assign prior_json = product.metafields['$app:priceanchor'][prior_key].value
+  if prior_json == blank
+    assign prior_json = product.metafields['$app:priceanchor'].lowest_price_default.value
+  endif
+  assign former_key = 'former_price_' | append: market_key
+  assign former_json = product.metafields['$app:priceanchor'][former_key].value
+  if former_json == blank
+    assign former_json = product.metafields['$app:priceanchor'].former_price_default.value
+  endif
+  assign is_us = false
+  if country_code == 'US'
+    assign is_us = true
+  endif
+-%}
+
+<script src="{{ 'priceanchor.js' | asset_url }}" defer></script>
+
+<div
+  class="priceanchor priceanchor--{{ block.settings.text_size }}"
+  data-priceanchor
+  data-prior="{{ prior_json | json | escape }}"
+  data-former="{{ former_json | json | escape }}"
+  data-country="{{ country_code | escape }}"
+  data-variant="{{ current_variant.id }}"
+  data-price-minor="{{ current_variant.price }}"
+  data-currency="{{ cart.currency.iso_code }}"
+  data-show-percent="{{ block.settings.show_percent }}"
+  data-l10n-prefix="{{ 'priceanchor.sentence_prefix' | t | escape }}"
+  data-l10n-infix="{{ 'priceanchor.sentence_infix' | t | escape }}"
+  style="margin: {{ block.settings.margin_top }}px 0 {{ block.settings.margin_bottom }}px;"
+>
+  {%- if block.settings.show_label -%}
+    {%- if is_us -%}
+      <span class="priceanchor__label">{{ 'priceanchor.previously_label' | t }}</span>
+    {%- else -%}
+      <span class="priceanchor__label">{{ 'priceanchor.lowest_price_label' | t }}</span>
+    {%- endif -%}
+  {%- endif -%}
+  <span class="priceanchor__line" data-priceanchor-line aria-live="polite"></span>
+</div>
+
+<style>
+  .priceanchor {
+    font-size: 0.85em;
+    color: rgba(var(--color-foreground, 18, 18, 18), 0.75);
+    line-height: 1.4;
+  }
+  .priceanchor--small { font-size: 0.75em; }
+  .priceanchor--large { font-size: 0.95em; }
+  .priceanchor__label { margin-right: 0.35em; }
+  .priceanchor[data-priceanchor-state="missing"] { display: none; }
+</style>
+
+{% schema %}
+{
+  "name": "Lowest price",
+  "target": "section",
+  "templates": ["product"],
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "show_label",
+      "label": "Show label",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_percent",
+      "label": "Show percent off",
+      "info": "Computed from the 30-day prior price, never from compare-at.",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "text_size",
+      "label": "Text size",
+      "options": [
+        { "value": "small", "label": "Small" },
+        { "value": "default", "label": "Default" },
+        { "value": "large", "label": "Large" }
+      ],
+      "default": "default"
+    },
+    {
+      "type": "range",
+      "id": "margin_top",
+      "label": "Top margin",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "default": 4
+    },
+    {
+      "type": "range",
+      "id": "margin_bottom",
+      "label": "Bottom margin",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "default": 4
+    }
+  ]
+}
+{% endschema %}

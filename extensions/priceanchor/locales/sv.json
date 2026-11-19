@@ -1,0 +1,8 @@
+{
+  "priceanchor": {
+    "lowest_price_label": "Lägsta pris:",
+    "previously_label": "Tidigare:",
+    "sentence_prefix": "Lägsta pris de senaste",
+    "sentence_infix": "dagarna"
+  }
+}

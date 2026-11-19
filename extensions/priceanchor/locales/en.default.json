@@ -1,0 +1,8 @@
+{
+  "priceanchor": {
+    "lowest_price_label": "Lowest price:",
+    "previously_label": "Previously:",
+    "sentence_prefix": "Lowest price in the last",
+    "sentence_infix": "days"
+  }
+}

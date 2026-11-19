@@ -1,0 +1,50 @@
+/* pi.dev website tokens, verbatim — see vendor/pi-web-tokens.json + vendor/README.md */
+:root {
+  color-scheme: dark;
+  --serif: "Plantin MT Pro", "Plantin MT Std", Plantin, Georgia, serif;
+  --mono: "Commit Mono", "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace;
+  --accent-mono:
+    "Departure Mono", "Commit Mono", "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas,
+    monospace;
+  --bg-deep: #0d1116;
+  --bg-canvas: #161d27;
+  --panel: #212730e6;
+  --panel-soft: #252f3dd1;
+  --line: #49505980;
+  --line-strong: #757d8975;
+  --text: #ebe7e4;
+  --copy: #ebe7e4bf;
+  --muted: #9fa4abad;
+  --muted-strong: #d5d8dbcc;
+  --accent: #6a9fcc;
+  --accent-rust: #8f3222;
+  --thread-blue: #4b607c;
+  --success: #5db87a;
+  --warning: #e8993a;
+  --error: #e8704f;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --serif: "Plantin MT Pro", "Plantin MT Std", Plantin, Georgia, serif;
+  --mono: "Commit Mono", "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace;
+  --accent-mono:
+    "Departure Mono", "Commit Mono", "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas,
+    monospace;
+  --bg-deep: #dacbc2;
+  --bg-canvas: #ebe7e4;
+  --panel: #f4f2f0;
+  --panel-soft: #eef1f3;
+  --line: #8b847d59;
+  --line-strong: #5c575240;
+  --text: #252f3df5;
+  --copy: #384251dc;
+  --muted: #5c5752c4;
+  --muted-strong: #394352d6;
+  --accent: #4b607c;
+  --accent-rust: #b86b52;
+  --thread-blue: #4b607c;
+  --success: #5db87a;
+  --warning: #e8993a;
+  --error: #e8704f;
+}
