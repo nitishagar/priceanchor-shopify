@@ -1,10 +1,13 @@
 import type { ActionFunctionArgs } from "react-router";
 import { eq } from "drizzle-orm";
-import { authenticate } from "../shopify.server";
-import { db } from "../db.server";
+import { getShopify } from "../shopify.server";
+import { getDb } from "../db.server";
+import { envFromContext } from "../lib/server-env";
 import { priceSnapshots, shops, sessionTable } from "../db/schema";
 
-export const action = async ({ request }: ActionFunctionArgs) => {
+export const action = async ({ request, context }: ActionFunctionArgs) => {
+  const env = envFromContext(context);
+  const { authenticate } = getShopify(env);
   const { shop, topic } = await authenticate.webhook(request);
 
   console.log(`Received ${topic} webhook for ${shop}`);
@@ -20,12 +23,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     case "SHOP_REDACT":
     case "shop/redact": {
-      const shopRecord = await db.query.shops.findFirst({
+      const dbClient = getDb(env.DATABASE_URL);
+      const shopRecord = await dbClient.query.shops.findFirst({
         where: eq(shops.domain, shop),
       });
 
       if (shopRecord) {
-        await db.transaction(async (tx) => {
+        await dbClient.transaction(async (tx) => {
           await tx
             .delete(priceSnapshots)
             .where(eq(priceSnapshots.shopId, shopRecord.id));

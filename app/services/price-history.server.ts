@@ -5,7 +5,7 @@
 // stored snapshot and record a row only when a price actually changed.
 
 import { and, desc, eq } from "drizzle-orm";
-import { db, type DbClient } from "../db.server";
+import type { DbClient } from "../db.server";
 import { priceSnapshots, type NewPriceSnapshot } from "../db/schema";
 import { parsePriceToMinor, type PricePoint } from "./lowest-price.server";
 
@@ -28,8 +28,8 @@ export async function latestSnapshotForVariant(
   shopId: number,
   productId: string,
   variantId: string,
+  dbClient: DbClient,
   market = "default",
-  dbClient: DbClient = db,
 ): Promise<PricePoint & { compareAtMinor: number | null } | null> {
   const row = await dbClient.query.priceSnapshots.findFirst({
     where: and(
@@ -57,8 +57,8 @@ export async function diffVariantPrices(
   shopId: number,
   productId: string,
   variants: WebhookVariantPrice[],
+  dbClient: DbClient,
   market = "default",
-  dbClient: DbClient = db,
 ): Promise<VariantPriceChange[]> {
   const out: VariantPriceChange[] = [];
   for (const v of variants) {
@@ -75,8 +75,8 @@ export async function diffVariantPrices(
       shopId,
       productId,
       variantId,
-      market,
       dbClient,
+      market,
     );
     const changed =
       prev === null ||
@@ -108,7 +108,7 @@ export interface RecordSnapshotInput {
 
 export async function recordSnapshot(
   input: RecordSnapshotInput,
-  dbClient: DbClient = db,
+  dbClient: DbClient,
 ) {
   const row: NewPriceSnapshot = {
     shopId: input.shopId,
@@ -129,9 +129,9 @@ export async function snapshotsForVariant(
   shopId: number,
   productId: string,
   variantId: string,
+  dbClient: DbClient,
   market = "default",
   limit = 500,
-  dbClient: DbClient = db,
 ): Promise<PricePoint[]> {
   const rows = await dbClient.query.priceSnapshots.findMany({
     where: and(
@@ -156,7 +156,7 @@ export async function snapshotsForVariant(
 // shops.trackedCount). Counts products, not variants.
 export async function distinctProductCount(
   shopId: number,
-  dbClient: DbClient = db,
+  dbClient: DbClient,
 ): Promise<number> {
   const rows = await dbClient
     .selectDistinct({ productId: priceSnapshots.productId })

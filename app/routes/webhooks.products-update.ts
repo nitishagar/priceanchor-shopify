@@ -1,12 +1,16 @@
 import type { ActionFunctionArgs } from "react-router";
-import { authenticate } from "../shopify.server";
+import { getShopify } from "../shopify.server";
+import { getDb } from "../db.server";
+import { envFromContext } from "../lib/server-env";
 import {
   handleProductPriceCapture,
   type ProductWebhookPayload,
 } from "../services/price-webhook.server";
 import type { AdminGraphQLClient } from "../services/graphql-types.server";
 
-export const action = async ({ request }: ActionFunctionArgs) => {
+export const action = async ({ request, context }: ActionFunctionArgs) => {
+  const env = envFromContext(context);
+  const { authenticate } = getShopify(env);
   const { shop, admin, payload } = await authenticate.webhook(request);
 
   try {
@@ -19,6 +23,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       shop,
       (admin as unknown as AdminGraphQLClient) ?? null,
       product,
+      getDb(env.DATABASE_URL),
     );
     console.log(
       `[products/update] shop=${shop} product=${product.id} recorded=${result.recorded} unchanged=${result.skippedUnchanged}`,

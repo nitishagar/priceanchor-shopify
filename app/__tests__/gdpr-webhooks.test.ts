@@ -1,26 +1,31 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { ActionFunctionArgs } from "react-router";
+import { testContext, testEnv } from "./helpers/test-env";
 
 const makeArgs = (request: Request) =>
-  ({ request, params: {}, context: {} }) as unknown as ActionFunctionArgs;
+  ({ request, params: {}, context: testContext() }) as unknown as ActionFunctionArgs;
+
+const mockAuthenticate = vi.hoisted(() => ({
+  webhook: vi.fn(),
+}));
 
 vi.mock("../shopify.server", () => ({
-  authenticate: {
-    webhook: vi.fn(),
-  },
+  getShopify: () => ({
+    authenticate: mockAuthenticate,
+  }),
 }));
 
-vi.mock("../db.server", () => ({
-  db: {
-    query: {
-      shops: {
-        findFirst: vi.fn(),
-      },
+const mockDb = vi.hoisted(() => ({
+  query: {
+    shops: {
+      findFirst: vi.fn(),
     },
-    delete: vi.fn(),
-    transaction: vi.fn(),
   },
+  delete: vi.fn(),
+  transaction: vi.fn(),
 }));
+
+vi.mock("../db.server", () => ({ getDb: () => mockDb }));
 
 vi.mock("drizzle-orm", () => ({
   eq: vi.fn((col, val) => ({ col, val })),
@@ -39,7 +44,8 @@ describe("Consolidated /webhooks compliance handler", () => {
 
   describe("HMAC validation", () => {
     it("propagates 401 Response thrown by authenticate.webhook on bad HMAC", async () => {
-      const { authenticate } = await import("../shopify.server");
+      const { getShopify } = await import("../shopify.server");
+      const { authenticate } = getShopify(testEnv());
       const unauthorized = new Response(null, {
         status: 401,
         statusText: "Unauthorized",
@@ -58,7 +64,8 @@ describe("Consolidated /webhooks compliance handler", () => {
 
   describe("customers/data_request topic", () => {
     it("returns 200", async () => {
-      const { authenticate } = await import("../shopify.server");
+      const { getShopify } = await import("../shopify.server");
+      const { authenticate } = getShopify(testEnv());
       vi.mocked(authenticate.webhook).mockResolvedValue({
         shop: "test-shop.myshopify.com",
         topic: "CUSTOMERS_DATA_REQUEST",
@@ -78,7 +85,8 @@ describe("Consolidated /webhooks compliance handler", () => {
     });
 
     it("accepts lowercase slash-form topic", async () => {
-      const { authenticate } = await import("../shopify.server");
+      const { getShopify } = await import("../shopify.server");
+      const { authenticate } = getShopify(testEnv());
       vi.mocked(authenticate.webhook).mockResolvedValue({
         shop: "test-shop.myshopify.com",
         topic: "customers/data_request",
@@ -100,7 +108,8 @@ describe("Consolidated /webhooks compliance handler", () => {
 
   describe("customers/redact topic", () => {
     it("returns 200", async () => {
-      const { authenticate } = await import("../shopify.server");
+      const { getShopify } = await import("../shopify.server");
+      const { authenticate } = getShopify(testEnv());
       vi.mocked(authenticate.webhook).mockResolvedValue({
         shop: "test-shop.myshopify.com",
         topic: "CUSTOMERS_REDACT",
@@ -122,7 +131,8 @@ describe("Consolidated /webhooks compliance handler", () => {
 
   describe("shop/redact topic", () => {
     it("returns 200 when shop is not found in database", async () => {
-      const { authenticate } = await import("../shopify.server");
+      const { getShopify } = await import("../shopify.server");
+      const { authenticate } = getShopify(testEnv());
       vi.mocked(authenticate.webhook).mockResolvedValue({
         shop: "unknown-shop.myshopify.com",
         topic: "SHOP_REDACT",
@@ -131,8 +141,7 @@ describe("Consolidated /webhooks compliance handler", () => {
         admin: undefined,
       } as never);
 
-      const { db } = await import("../db.server");
-      vi.mocked(db.query.shops.findFirst).mockResolvedValue(undefined);
+            vi.mocked(mockDb.query.shops.findFirst).mockResolvedValue(undefined);
 
       const { action } = await import("../routes/webhooks._index");
       const request = new Request("http://localhost/webhooks", {
@@ -145,7 +154,8 @@ describe("Consolidated /webhooks compliance handler", () => {
     });
 
     it("wraps all deletes in a transaction", async () => {
-      const { authenticate } = await import("../shopify.server");
+      const { getShopify } = await import("../shopify.server");
+      const { authenticate } = getShopify(testEnv());
       vi.mocked(authenticate.webhook).mockResolvedValue({
         shop: "test-shop.myshopify.com",
         topic: "SHOP_REDACT",
@@ -154,14 +164,13 @@ describe("Consolidated /webhooks compliance handler", () => {
         admin: undefined,
       } as never);
 
-      const { db } = await import("../db.server");
-      const mockShop = { id: 42, domain: "test-shop.myshopify.com" };
-      vi.mocked(db.query.shops.findFirst).mockResolvedValue(mockShop as never);
+            const mockShop = { id: 42, domain: "test-shop.myshopify.com" };
+      vi.mocked(mockDb.query.shops.findFirst).mockResolvedValue(mockShop as never);
 
       const mockWhere = vi.fn().mockResolvedValue(undefined);
       const mockTxDelete = vi.fn().mockReturnValue({ where: mockWhere });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(db.transaction).mockImplementation(async (cb: any) => {
+      vi.mocked(mockDb.transaction).mockImplementation(async (cb: any) => {
         const tx = { delete: mockTxDelete };
         return cb(tx);
       });
@@ -174,11 +183,12 @@ describe("Consolidated /webhooks compliance handler", () => {
 
       const response = await action(makeArgs(request));
       expect(response.status).toBe(200);
-      expect(db.transaction).toHaveBeenCalledTimes(1);
+      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
     });
 
     it("deletes all data in correct order: priceSnapshots, sessionTable, shops", async () => {
-      const { authenticate } = await import("../shopify.server");
+      const { getShopify } = await import("../shopify.server");
+      const { authenticate } = getShopify(testEnv());
       const { eq } = await import("drizzle-orm");
       vi.mocked(authenticate.webhook).mockResolvedValue({
         shop: "test-shop.myshopify.com",
@@ -188,14 +198,13 @@ describe("Consolidated /webhooks compliance handler", () => {
         admin: undefined,
       } as never);
 
-      const { db } = await import("../db.server");
-      const mockShop = { id: 42, domain: "test-shop.myshopify.com" };
-      vi.mocked(db.query.shops.findFirst).mockResolvedValue(mockShop as never);
+            const mockShop = { id: 42, domain: "test-shop.myshopify.com" };
+      vi.mocked(mockDb.query.shops.findFirst).mockResolvedValue(mockShop as never);
 
       const mockWhere = vi.fn().mockResolvedValue(undefined);
       const mockTxDelete = vi.fn().mockReturnValue({ where: mockWhere });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(db.transaction).mockImplementation(async (cb: any) => {
+      vi.mocked(mockDb.transaction).mockImplementation(async (cb: any) => {
         const tx = { delete: mockTxDelete };
         return cb(tx);
       });
@@ -222,7 +231,8 @@ describe("Consolidated /webhooks compliance handler", () => {
     });
 
     it("deletes sessionTable records by shop domain", async () => {
-      const { authenticate } = await import("../shopify.server");
+      const { getShopify } = await import("../shopify.server");
+      const { authenticate } = getShopify(testEnv());
       const { eq } = await import("drizzle-orm");
       vi.mocked(authenticate.webhook).mockResolvedValue({
         shop: "my-store.myshopify.com",
@@ -232,14 +242,13 @@ describe("Consolidated /webhooks compliance handler", () => {
         admin: undefined,
       } as never);
 
-      const { db } = await import("../db.server");
-      const mockShop = { id: 99, domain: "my-store.myshopify.com" };
-      vi.mocked(db.query.shops.findFirst).mockResolvedValue(mockShop as never);
+            const mockShop = { id: 99, domain: "my-store.myshopify.com" };
+      vi.mocked(mockDb.query.shops.findFirst).mockResolvedValue(mockShop as never);
 
       const mockWhere = vi.fn().mockResolvedValue(undefined);
       const mockTxDelete = vi.fn().mockReturnValue({ where: mockWhere });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(db.transaction).mockImplementation(async (cb: any) => {
+      vi.mocked(mockDb.transaction).mockImplementation(async (cb: any) => {
         const tx = { delete: mockTxDelete };
         return cb(tx);
       });
@@ -261,7 +270,8 @@ describe("Consolidated /webhooks compliance handler", () => {
 
   describe("unknown topic", () => {
     it("returns 404 for topics not in the compliance set", async () => {
-      const { authenticate } = await import("../shopify.server");
+      const { getShopify } = await import("../shopify.server");
+      const { authenticate } = getShopify(testEnv());
       vi.mocked(authenticate.webhook).mockResolvedValue({
         shop: "test-shop.myshopify.com",
         topic: "ORDERS_CREATE",

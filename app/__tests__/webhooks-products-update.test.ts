@@ -1,13 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { ActionFunctionArgs } from "react-router";
+import { testContext, testEnv } from "./helpers/test-env";
 
 const makeArgs = (request: Request) =>
-  ({ request, params: {}, context: {} }) as unknown as ActionFunctionArgs;
+  ({ request, params: {}, context: testContext() }) as unknown as ActionFunctionArgs;
+
+const mockAuthenticate = vi.hoisted(() => ({
+  webhook: vi.fn(),
+  admin: vi.fn(),
+}));
 
 vi.mock("../shopify.server", () => ({
-  authenticate: {
-    webhook: vi.fn(),
-  },
+  getShopify: () => ({
+    authenticate: mockAuthenticate,
+  }),
 }));
 
 vi.mock("../services/price-webhook.server", () => ({
@@ -37,7 +43,8 @@ describe("products/create webhook route", () => {
   });
 
   it("captures prices and returns 200", async () => {
-    const { authenticate } = await import("../shopify.server");
+    const { getShopify } = await import("../shopify.server");
+    const { authenticate } = getShopify(testEnv());
     vi.mocked(authenticate.webhook).mockResolvedValue(
       authed("PRODUCTS_CREATE", productPayload),
     );
@@ -70,7 +77,8 @@ describe("products/create webhook route", () => {
   });
 
   it("still returns 200 when the handler throws (Shopify retries otherwise)", async () => {
-    const { authenticate } = await import("../shopify.server");
+    const { getShopify } = await import("../shopify.server");
+    const { authenticate } = getShopify(testEnv());
     vi.mocked(authenticate.webhook).mockResolvedValue(
       authed("PRODUCTS_CREATE", productPayload),
     );
@@ -94,7 +102,8 @@ describe("products/update webhook route", () => {
   });
 
   it("delegates to price capture (diffing lives in the service)", async () => {
-    const { authenticate } = await import("../shopify.server");
+    const { getShopify } = await import("../shopify.server");
+    const { authenticate } = getShopify(testEnv());
     vi.mocked(authenticate.webhook).mockResolvedValue(
       authed("PRODUCTS_UPDATE", productPayload),
     );
@@ -122,7 +131,8 @@ describe("products/update webhook route", () => {
   });
 
   it("still returns 200 when the handler throws", async () => {
-    const { authenticate } = await import("../shopify.server");
+    const { getShopify } = await import("../shopify.server");
+    const { authenticate } = getShopify(testEnv());
     vi.mocked(authenticate.webhook).mockResolvedValue(
       authed("PRODUCTS_UPDATE", productPayload),
     );
@@ -146,7 +156,8 @@ describe("products/delete webhook route", () => {
   });
 
   it("reconciles tracking and returns 200", async () => {
-    const { authenticate } = await import("../shopify.server");
+    const { getShopify } = await import("../shopify.server");
+    const { authenticate } = getShopify(testEnv());
     vi.mocked(authenticate.webhook).mockResolvedValue(
       authed("PRODUCTS_DELETE", { id: 123 }),
     );
@@ -164,6 +175,7 @@ describe("products/delete webhook route", () => {
     expect(handleProductDelete).toHaveBeenCalledWith(
       "test-shop.myshopify.com",
       123,
+      expect.anything(),
     );
   });
 });

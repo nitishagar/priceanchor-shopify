@@ -1,17 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("../db.server", () => ({
-  db: {
-    query: {
-      priceSnapshots: {
-        findFirst: vi.fn(),
-        findMany: vi.fn(),
-      },
+const mockDb = vi.hoisted(() => ({
+  query: {
+    priceSnapshots: {
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
     },
-    insert: vi.fn(),
-    selectDistinct: vi.fn(),
   },
+  insert: vi.fn(),
+  selectDistinct: vi.fn(),
 }));
+
+vi.mock("../db.server", () => ({ getDb: () => mockDb }));
 
 vi.mock("drizzle-orm", () => ({
   and: vi.fn((...args: unknown[]) => args),
@@ -19,15 +19,12 @@ vi.mock("drizzle-orm", () => ({
   eq: vi.fn((col, val) => ({ col, val })),
 }));
 
-import { db } from "../db.server";
 import {
   diffVariantPrices,
   recordSnapshot,
   snapshotsForVariant,
 } from "../services/price-history.server";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockDb = db as any;
 
 describe("diffVariantPrices", () => {
   beforeEach(() => {
@@ -40,7 +37,7 @@ describe("diffVariantPrices", () => {
     const diffs = await diffVariantPrices(1, "p1", [
       { id: 11, price: "19.99", compare_at_price: "24.99" },
       { id: 12, price: "9.99" },
-    ]);
+    ], mockDb as never);
 
     expect(diffs).toHaveLength(2);
     expect(diffs[0]).toMatchObject({
@@ -71,7 +68,7 @@ describe("diffVariantPrices", () => {
 
     const diffs = await diffVariantPrices(1, "p1", [
       { id: 11, price: "19.99", compare_at_price: "24.99" },
-    ]);
+    ], mockDb as never);
 
     expect(diffs).toHaveLength(1);
     expect(diffs[0]!.changed).toBe(false);
@@ -88,7 +85,7 @@ describe("diffVariantPrices", () => {
 
     const diffs = await diffVariantPrices(1, "p1", [
       { id: 11, price: "17.99" },
-    ]);
+    ], mockDb as never);
 
     expect(diffs[0]).toMatchObject({
       priceMinor: 1799,
@@ -108,7 +105,7 @@ describe("diffVariantPrices", () => {
 
     const diffs = await diffVariantPrices(1, "p1", [
       { id: 11, price: "19.99", compare_at_price: "24.99" },
-    ]);
+    ], mockDb as never);
 
     expect(diffs[0]).toMatchObject({
       compareAtMinor: 2499,
@@ -128,7 +125,7 @@ describe("diffVariantPrices", () => {
 
     const diffs = await diffVariantPrices(1, "p1", [
       { id: 11, price: "19.99", compare_at_price: null },
-    ]);
+    ], mockDb as never);
 
     expect(diffs[0]).toMatchObject({
       compareAtMinor: null,
@@ -143,7 +140,7 @@ describe("diffVariantPrices", () => {
     const diffs = await diffVariantPrices(1, "p1", [
       { id: 11, price: "not-a-price" },
       { id: 12, price: "9.99" },
-    ]);
+    ], mockDb as never);
 
     expect(diffs.map((d) => d.variantId)).toEqual(["12"]);
   });
@@ -167,7 +164,7 @@ describe("recordSnapshot", () => {
       priceMinor: 1999,
       compareAtMinor: null,
       source: "webhook",
-    });
+    }, mockDb as never);
 
     expect(row).toEqual({ id: 7 });
     const values = mockDb.insert.mock.results[0].value.values.mock.calls[0][0];
@@ -198,7 +195,7 @@ describe("snapshotsForVariant", () => {
       { priceMinor: 1999, capturedAt: older, market: "default", currency: "USD" },
     ]);
 
-    const points = await snapshotsForVariant(1, "p1", "11");
+    const points = await snapshotsForVariant(1, "p1", "11", mockDb as never);
 
     expect(points).toEqual([
       { priceMinor: 1799, capturedAt: newer, market: "default", currency: "USD" },

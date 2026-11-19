@@ -1,7 +1,8 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useFetcher } from "react-router";
-import { authenticate } from "../shopify.server";
-import { db } from "../db.server";
+import { getShopify } from "../shopify.server";
+import { getDb } from "../db.server";
+import { envFromContext } from "../lib/server-env";
 import { shops } from "../db/schema";
 import { eq } from "drizzle-orm";
 import { getOrCreateShop } from "../services/shop.server";
@@ -21,13 +22,17 @@ interface LoaderData {
   trackedCount: number;
   productLimit: number;
   autoClearAllowed: boolean;
+  appHandle: string;
 }
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request, context }: LoaderFunctionArgs) => {
+  const env = envFromContext(context);
+  const { authenticate } = getShopify(env);
   const { session } = await authenticate.admin(request);
+  const dbClient = getDb(env.DATABASE_URL);
 
   try {
-    const shopRecord = await db.query.shops.findFirst({
+    const shopRecord = await dbClient.query.shops.findFirst({
       where: eq(shops.domain, session.shop),
     });
 
@@ -38,6 +43,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       trackedCount: shopRecord?.trackedCount ?? 0,
       productLimit: shopRecord?.productLimit ?? 25,
       autoClearAllowed: getPlanCapabilities(plan).autoClear,
+      appHandle: env.SHOPIFY_APP_HANDLE ?? "priceanchor",
     };
     return data;
   } catch {
@@ -47,13 +53,17 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       trackedCount: 0,
       productLimit: 25,
       autoClearAllowed: false,
+      appHandle: env.SHOPIFY_APP_HANDLE ?? "priceanchor",
     };
     return data;
   }
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
+export const action = async ({ request, context }: ActionFunctionArgs) => {
+  const env = envFromContext(context);
+  const { authenticate } = getShopify(env);
   const { session } = await authenticate.admin(request);
+  const dbClient = getDb(env.DATABASE_URL);
   const formData = await request.formData();
 
   const settings: GuardSettings = {
@@ -73,12 +83,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   };
 
   try {
-    const shopRecord = await getOrCreateShop(session.shop);
+    const shopRecord = await getOrCreateShop(session.shop, dbClient);
     if (shopRecord) {
       // Server-side tier enforcement: auto-clear persists only on Unlimited.
       const plan = (shopRecord.plan as Plan) ?? "free";
       if (!getPlanCapabilities(plan).autoClear) settings.autoClear = false;
-      await db
+      await dbClient
         .update(shops)
         .set({ settings })
         .where(eq(shops.id, shopRecord.id));
@@ -101,7 +111,7 @@ const inputStyle = {
 } as const;
 
 export default function SettingsPage() {
-  const { settings, shopPlan, trackedCount, productLimit, autoClearAllowed } =
+  const { settings, shopPlan, trackedCount, productLimit, autoClearAllowed, appHandle } =
     useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
 
@@ -193,7 +203,7 @@ export default function SettingsPage() {
               {trackedCount} / {productLimit === 999999 ? "∞" : productLimit}{" "}
               tracked products in use
             </s-text>
-            <s-link href={managedPricingUrl()} target="_top">
+            <s-link href={managedPricingUrl(appHandle)} target="_top">
               Manage plan
             </s-link>
           </s-stack>

@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
-import { db, type DbClient } from "../db.server";
+import type { DbClient } from "../db.server";
 import { shops } from "../db/schema";
 
 export async function getOrCreateShop(
   domain: string,
-  dbClient: DbClient = db,
+  dbClient: DbClient,
 ) {
   const existing = await dbClient.query.shops.findFirst({
     where: eq(shops.domain, domain),

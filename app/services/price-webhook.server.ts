@@ -7,7 +7,7 @@
 //   the audit trail); only the tracked-product counter is reconciled.
 
 import { and, eq } from "drizzle-orm";
-import { db, type DbClient } from "../db.server";
+import type { DbClient } from "../db.server";
 import { priceSnapshots, shops } from "../db/schema";
 import { getOrCreateShop } from "./shop.server";
 import {
@@ -72,8 +72,8 @@ export async function handleProductPriceCapture(
   shopDomain: string,
   admin: AdminGraphQLClient | null,
   payload: ProductWebhookPayload,
+  dbClient: DbClient,
   source: "webhook" | "snapshot" | "backfill" = "webhook",
-  dbClient: DbClient = db,
 ): Promise<PriceCaptureResult> {
   const result: PriceCaptureResult = {
     recorded: 0,
@@ -105,7 +105,7 @@ export async function handleProductPriceCapture(
   });
   result.productKnown = existingProduct != null;
   if (!result.productKnown) {
-    const check = await checkPlanAllowsProduct(shopRecord.id, 1, dbClient);
+    const check = await checkPlanAllowsProduct(shopRecord.id, dbClient, 1);
     if (!check.allowed) return result;
   }
 
@@ -119,8 +119,8 @@ export async function handleProductPriceCapture(
     shopRecord.id,
     productId,
     variants,
-    market,
     dbClient,
+    market,
   );
 
   for (const d of diffs) {
@@ -148,9 +148,9 @@ export async function handleProductPriceCapture(
         shopRecord.id,
         productId,
         d.variantId,
+        dbClient,
         market,
         500,
-        dbClient,
       );
       const ownerId = `gid://shopify/Product/${productId}`;
       const prior = euPriorPrice(history);
@@ -249,7 +249,7 @@ async function maybeAutoClearCompareAt(
 export async function handleProductDelete(
   shopDomain: string,
   productId: string | number,
-  dbClient: DbClient = db,
+  dbClient: DbClient,
 ): Promise<{ reconciled: boolean }> {
   // History is retained as evidence; just reconcile the tracked counter
   // against remaining products.

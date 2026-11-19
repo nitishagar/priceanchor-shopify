@@ -92,7 +92,7 @@ describe("snapshotShop", () => {
       after: "cursor-1",
     });
     expect(capture).toHaveBeenCalledTimes(2);
-    expect(vi.mocked(capture).mock.calls[0].slice(0, 4)).toEqual([
+    expect(vi.mocked(capture).mock.calls[0].slice(0, 5)).toEqual([
       "s.myshopify.com",
       { graphql },
       {
@@ -100,6 +100,7 @@ describe("snapshotShop", () => {
         title: "P",
         variants: [{ id: "11", price: "19.99", compare_at_price: null }],
       },
+      expect.anything(),
       "snapshot",
     ]);
     expect(result).toMatchObject({

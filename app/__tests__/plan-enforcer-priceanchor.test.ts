@@ -1,29 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("../db.server", () => ({
-  db: {
-    query: {
-      shops: {
-        findFirst: vi.fn(),
-      },
+const mockDb = vi.hoisted(() => ({
+  query: {
+    shops: {
+      findFirst: vi.fn(),
     },
   },
 }));
+
+vi.mock("../db.server", () => ({ getDb: () => mockDb }));
 
 vi.mock("drizzle-orm", () => ({
   eq: vi.fn((col, val) => ({ col, val })),
 }));
 
-import { db } from "../db.server";
 import {
   PLAN_LIMITS,
   checkPlanAllowsProduct,
   getPlanCapabilities,
   getPlanLimits,
 } from "../services/plan-enforcer.server";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockDb = db as any;
 
 describe("PLAN_LIMITS", () => {
   it("gates tracked products 25 / 250 / unlimited across tiers", () => {
@@ -63,7 +59,7 @@ describe("checkPlanAllowsProduct", () => {
       trackedCount: 24,
     });
 
-    const result = await checkPlanAllowsProduct(1, 1);
+    const result = await checkPlanAllowsProduct(1, mockDb as never, 1);
 
     expect(result.allowed).toBe(true);
     expect(result.currentCount).toBe(24);
@@ -77,7 +73,7 @@ describe("checkPlanAllowsProduct", () => {
       trackedCount: 25,
     });
 
-    const result = await checkPlanAllowsProduct(1, 1);
+    const result = await checkPlanAllowsProduct(1, mockDb as never, 1);
 
     expect(result.allowed).toBe(false);
     expect(result.reason).toContain("25/25");
@@ -91,8 +87,8 @@ describe("checkPlanAllowsProduct", () => {
       trackedCount: 249,
     });
 
-    expect((await checkPlanAllowsProduct(1, 1)).allowed).toBe(true);
-    expect((await checkPlanAllowsProduct(1, 2)).allowed).toBe(false);
+    expect((await checkPlanAllowsProduct(1, mockDb as never, 1)).allowed).toBe(true);
+    expect((await checkPlanAllowsProduct(1, mockDb as never, 2)).allowed).toBe(false);
   });
 
   it("always allows on unlimited", async () => {
@@ -102,7 +98,7 @@ describe("checkPlanAllowsProduct", () => {
       trackedCount: 99999,
     });
 
-    const result = await checkPlanAllowsProduct(1, 5000);
+    const result = await checkPlanAllowsProduct(1, mockDb as never, 5000);
 
     expect(result.allowed).toBe(true);
     expect(result.limit).toBe(Infinity);
@@ -111,7 +107,7 @@ describe("checkPlanAllowsProduct", () => {
   it("denies unknown shops", async () => {
     mockDb.query.shops.findFirst.mockResolvedValue(undefined);
 
-    const result = await checkPlanAllowsProduct(999, 1);
+    const result = await checkPlanAllowsProduct(999, mockDb as never, 1);
 
     expect(result.allowed).toBe(false);
     expect(result.reason).toBe("Shop not found");
@@ -124,7 +120,7 @@ describe("checkPlanAllowsProduct", () => {
       trackedCount: null,
     });
 
-    const result = await checkPlanAllowsProduct(1, 1);
+    const result = await checkPlanAllowsProduct(1, mockDb as never, 1);
 
     expect(result.allowed).toBe(true);
     expect(result.currentCount).toBe(0);

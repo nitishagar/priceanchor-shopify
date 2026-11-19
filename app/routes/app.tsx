@@ -4,11 +4,15 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import { NavMenu } from "@shopify/app-bridge-react";
 
-import { authenticate } from "../shopify.server";
+import { getShopify } from "../shopify.server";
+import { getDb } from "../db.server";
+import { envFromContext } from "../lib/server-env";
 import { syncPlanFromShopify } from "../services/billing/billing.server";
 import type { AdminGraphQLClient } from "../services/graphql-types.server";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request, context }: LoaderFunctionArgs) => {
+  const env = envFromContext(context);
+  const { authenticate } = getShopify(env);
   const { session, admin } = await authenticate.admin(request);
 
   if (admin) {
@@ -16,14 +20,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       await syncPlanFromShopify(
         session.shop,
         admin as unknown as AdminGraphQLClient,
+        getDb(env.DATABASE_URL),
       );
     } catch (err) {
       console.error("app loader: plan sync failed", err);
     }
   }
 
-  // eslint-disable-next-line no-undef
-  return { apiKey: process.env.SHOPIFY_API_KEY || "" };
+  return { apiKey: env.SHOPIFY_API_KEY || "" };
 };
 
 export default function App() {

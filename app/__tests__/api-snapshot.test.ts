@@ -1,13 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { ActionFunctionArgs } from "react-router";
+import { testContext, testEnv } from "./helpers/test-env";
 
 const makeArgs = (request: Request) =>
-  ({ request, params: {}, context: {} }) as unknown as ActionFunctionArgs;
+  ({ request, params: {}, context: testContext() }) as unknown as ActionFunctionArgs;
+
+const mockUnauthenticated = vi.hoisted(() => ({
+  admin: vi.fn(),
+}));
 
 vi.mock("../shopify.server", () => ({
-  unauthenticated: {
-    admin: vi.fn(),
-  },
+  getShopify: () => ({
+    unauthenticated: mockUnauthenticated,
+  }),
 }));
 
 vi.mock("../services/snapshot.server", () => ({
@@ -68,7 +73,8 @@ describe("POST /api/snapshot", () => {
     );
     vi.mocked(runSnapshotForAllShops).mockImplementation(async (getAdmin) => {
       // Exercise the injected admin lookup: ok, null, throw.
-      const { unauthenticated } = await import("../shopify.server");
+      const { getShopify } = await import("../shopify.server");
+    const { unauthenticated } = getShopify(testEnv());
       vi.mocked(unauthenticated.admin)
         .mockResolvedValueOnce({ admin: { graphql: vi.fn() } } as never)
         .mockResolvedValueOnce({ admin: null } as never)

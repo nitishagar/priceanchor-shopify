@@ -8,7 +8,7 @@
 // source "snapshot" (unchanged prices are skipped by diffing, so a snapshot
 // run is a no-op for quiet catalogs).
 
-import { db, type DbClient } from "../db.server";
+import type { DbClient } from "../db.server";
 import {
   handleProductPriceCapture,
   type ProductWebhookPayload,
@@ -81,7 +81,7 @@ export type CaptureFn = typeof handleProductPriceCapture;
 export async function snapshotShop(
   shopDomain: string,
   admin: AdminGraphQLClient,
-  dbClient: DbClient = db,
+  dbClient: DbClient,
   capture: CaptureFn = handleProductPriceCapture,
 ): Promise<SnapshotShopResult> {
   const result: SnapshotShopResult = {
@@ -124,8 +124,8 @@ export async function snapshotShop(
           shopDomain,
           admin,
           payload,
-          "snapshot",
           dbClient,
+          "snapshot",
         );
         result.recorded += captureResult.recorded;
         result.skippedUnchanged += captureResult.skippedUnchanged;
@@ -157,7 +157,7 @@ export type GetAdminFn = (shop: string) => Promise<AdminGraphQLClient | null>;
 
 export async function runSnapshotForAllShops(
   getAdmin: GetAdminFn,
-  dbClient: DbClient = db,
+  dbClient: DbClient,
   capture: CaptureFn = handleProductPriceCapture,
 ): Promise<SnapshotRunResult> {
   const run: SnapshotRunResult = {

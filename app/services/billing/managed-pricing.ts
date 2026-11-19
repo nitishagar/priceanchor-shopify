@@ -11,7 +11,6 @@ export function getCurrentPlan(shopRecord: { plan: string }): Plan {
   return "free";
 }
 
-export function managedPricingUrl(): string {
-  const handle = process.env.SHOPIFY_APP_HANDLE || "priceanchor";
+export function managedPricingUrl(handle = "priceanchor"): string {
   return `shopify://admin/charges/${handle}/pricing_plans`;
 }

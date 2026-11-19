@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { db, type DbClient } from "../db.server";
+import type { DbClient } from "../db.server";
 import { shops } from "../db/schema";
 
 export type Plan = "free" | "standard" | "unlimited";
@@ -77,8 +77,8 @@ function denied(
 // counts once. This matches the Complimus-style per-product fair-use model.
 export async function checkPlanAllowsProduct(
   shopId: number,
+  dbClient: DbClient,
   additional = 1,
-  dbClient: DbClient = db,
 ): Promise<PlanCheckResult> {
   const shop = await dbClient.query.shops.findFirst({
     where: eq(shops.id, shopId),

@@ -33,27 +33,26 @@ vi.mock("../services/stale-guard.server", () => ({
   clearCompareAtPrice: vi.fn(),
 }));
 
-vi.mock("../db.server", () => ({
-  db: {
-    query: {
-      priceSnapshots: {
-        findFirst: vi.fn(),
-      },
+const mockDb = vi.hoisted(() => ({
+  query: {
+    priceSnapshots: {
+      findFirst: vi.fn(),
     },
-    update: vi.fn(() => ({
-      set: vi.fn(() => ({
-        where: vi.fn().mockResolvedValue(undefined),
-      })),
-    })),
   },
+  update: vi.fn(() => ({
+    set: vi.fn(() => ({
+      where: vi.fn().mockResolvedValue(undefined),
+    })),
+  })),
 }));
+
+vi.mock("../db.server", () => ({ getDb: () => mockDb }));
 
 vi.mock("drizzle-orm", () => ({
   and: vi.fn((...args: unknown[]) => args),
   eq: vi.fn((col, val) => ({ col, val })),
 }));
 
-import { db } from "../db.server";
 import { getOrCreateShop } from "../services/shop.server";
 import {
   diffVariantPrices,
@@ -81,8 +80,6 @@ import {
 } from "../services/stale-guard.server";
 import { handleProductPriceCapture } from "../services/price-webhook.server";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockDb = db as any;
 const SHOP = { id: 1, domain: "s.myshopify.com", plan: "free", trackedCount: 0 };
 
 describe("handleProductPriceCapture", () => {
@@ -155,6 +152,7 @@ describe("handleProductPriceCapture", () => {
           { id: 12, price: "9.99" },
         ],
       },
+      mockDb as never,
     );
 
     expect(result).toMatchObject({
@@ -187,6 +185,7 @@ describe("handleProductPriceCapture", () => {
       SHOP.domain,
       { graphql: vi.fn() },
       { id: 123, variants: [{ id: 11, price: "19.99" }] },
+      mockDb as never,
     );
 
     expect(result).toMatchObject({ recorded: 0, skippedUnchanged: 1 });
@@ -212,10 +211,11 @@ describe("handleProductPriceCapture", () => {
       SHOP.domain,
       { graphql: vi.fn() },
       { id: 999, variants: [{ id: 91, price: "5.99" }] },
+      mockDb as never,
     );
 
     expect(result).toMatchObject({ recorded: 0, productKnown: false });
-    expect(checkPlanAllowsProduct).toHaveBeenCalledWith(1, 1, mockDb);
+    expect(checkPlanAllowsProduct).toHaveBeenCalledWith(1, mockDb, 1);
     expect(diffVariantPrices).not.toHaveBeenCalled();
   });
 
@@ -227,6 +227,7 @@ describe("handleProductPriceCapture", () => {
       SHOP.domain,
       null,
       { id: 123, variants: [{ id: 11, price: "19.99" }] },
+      mockDb as never,
     );
 
     expect(checkPlanAllowsProduct).not.toHaveBeenCalled();
@@ -262,6 +263,7 @@ describe("handleProductPriceCapture", () => {
       SHOP.domain,
       { graphql: vi.fn() },
       { id: 123, variants: [{ id: 11, price: "17.99" }] },
+      mockDb as never,
     );
 
     expect(result.recorded).toBe(1);
@@ -274,6 +276,7 @@ describe("handleProductPriceCapture", () => {
       SHOP.domain,
       null,
       { id: 123, variants: [] },
+      mockDb as never,
     );
 
     expect(result.recorded).toBe(0);
@@ -324,6 +327,7 @@ describe("handleProductPriceCapture", () => {
       SHOP.domain,
       { graphql: vi.fn() },
       { id: 123, variants: [{ id: 11, price: "17.99" }] },
+      mockDb as never,
     );
 
     expect(result.metafieldsWritten).toBe(2);
@@ -389,6 +393,7 @@ describe("handleProductPriceCapture", () => {
       SHOP.domain,
       { graphql: vi.fn() },
       { id: 123, variants: [{ id: 11, price: "17.99", compare_at_price: "24.99" }] },
+      mockDb as never,
     );
 
     expect(result.autoCleared).toBe(1);
@@ -432,6 +437,7 @@ describe("handleProductPriceCapture", () => {
       SHOP.domain,
       { graphql: vi.fn() },
       { id: 123, variants: [{ id: 11, price: "17.99", compare_at_price: "24.99" }] },
+      mockDb as never,
     );
 
     expect(result.autoCleared).toBe(0);
@@ -487,6 +493,7 @@ describe("handleProductPriceCapture", () => {
       SHOP.domain,
       { graphql: vi.fn() },
       { id: 123, variants: [{ id: 11, price: "17.99", compare_at_price: "24.99" }] },
+      mockDb as never,
     );
 
     expect(result.recorded).toBe(1);

@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { db } from "../../db.server";
+import type { DbClient } from "../../db.server";
 import { shops } from "../../db/schema";
 import { PLAN_LIMITS, type Plan } from "../plan-enforcer.server";
 import type { AdminGraphQLClient } from "../graphql-types.server";
@@ -34,8 +34,9 @@ interface CurrentSubscriptionResponse {
 export async function syncPlanFromShopify(
   shopDomain: string,
   admin: AdminGraphQLClient,
+  dbClient: DbClient,
 ): Promise<Plan> {
-  const shopRecord = await db.query.shops.findFirst({
+  const shopRecord = await dbClient.query.shops.findFirst({
     where: eq(shops.domain, shopDomain),
   });
 
@@ -58,7 +59,7 @@ export async function syncPlanFromShopify(
   const limit = PLAN_LIMITS[derivedPlan].productLimit;
   const productLimit = Number.isFinite(limit) ? limit : 999999;
 
-  await db
+  await dbClient
     .update(shops)
     .set({ plan: derivedPlan, productLimit })
     .where(eq(shops.id, shopRecord.id));

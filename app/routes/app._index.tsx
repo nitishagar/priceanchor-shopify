@@ -1,7 +1,8 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { authenticate } from "../shopify.server";
-import { db } from "../db.server";
+import { getShopify } from "../shopify.server";
+import { getDb } from "../db.server";
+import { envFromContext } from "../lib/server-env";
 import { shops } from "../db/schema";
 import { eq } from "drizzle-orm";
 import { getPlanLimits } from "../services/plan-enforcer.server";
@@ -13,13 +14,17 @@ interface LoaderData {
   trackedCount: number;
   productLimit: number;
   setupDone: boolean;
+  appHandle: string;
 }
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request, context }: LoaderFunctionArgs) => {
+  const env = envFromContext(context);
+  const { authenticate } = getShopify(env);
   const { session } = await authenticate.admin(request);
+  const dbClient = getDb(env.DATABASE_URL);
 
   try {
-    const shopRecord = await db.query.shops.findFirst({
+    const shopRecord = await dbClient.query.shops.findFirst({
       where: eq(shops.domain, session.shop),
     });
 
@@ -32,6 +37,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       trackedCount,
       productLimit: limits.productLimit,
       setupDone: trackedCount > 0,
+      appHandle: env.SHOPIFY_APP_HANDLE ?? "priceanchor",
     };
     return data;
   } catch {
@@ -40,13 +46,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       trackedCount: 0,
       productLimit: 25,
       setupDone: false,
+      appHandle: env.SHOPIFY_APP_HANDLE ?? "priceanchor",
     };
     return data;
   }
 };
 
 export default function Dashboard() {
-  const { shopPlan, trackedCount, productLimit, setupDone } =
+  const { shopPlan, trackedCount, productLimit, setupDone, appHandle } =
     useLoaderData<typeof loader>();
   const limitLabel = productLimit === Infinity ? "Unlimited" : String(productLimit);
 
@@ -80,7 +87,7 @@ export default function Dashboard() {
               <s-heading>
                 {shopPlan.charAt(0).toUpperCase() + shopPlan.slice(1)}
               </s-heading>
-              <s-link href={managedPricingUrl()} target="_top">
+              <s-link href={managedPricingUrl(appHandle)} target="_top">
                 Manage plan
               </s-link>
             </s-stack>

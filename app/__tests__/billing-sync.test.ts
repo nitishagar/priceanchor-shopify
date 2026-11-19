@@ -1,36 +1,36 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const updateChain = {
-  set: vi.fn(),
-  where: vi.fn(),
-};
-
-vi.mock("../db.server", () => ({
-  db: {
-    query: {
-      shops: {
-        findFirst: vi.fn(),
+const { mockDb, updateChain } = vi.hoisted(() => {
+  const updateChain = {
+    set: vi.fn(),
+    where: vi.fn(),
+  };
+  return {
+    updateChain,
+    mockDb: {
+      query: {
+        shops: {
+          findFirst: vi.fn(),
+        },
       },
+      update: vi.fn(() => ({
+        set: vi.fn((vals: unknown) => {
+          updateChain.set(vals);
+          return {
+            where: vi.fn((w: unknown) => {
+              updateChain.where(w);
+              return Promise.resolve();
+            }),
+          };
+        }),
+      })),
     },
-    update: vi.fn(() => ({
-      set: vi.fn((vals) => {
-        updateChain.set(vals);
-        return {
-          where: vi.fn((w) => {
-            updateChain.where(w);
-            return Promise.resolve();
-          }),
-        };
-      }),
-    })),
-  },
-}));
+  };
+});
 
-import { db } from "../db.server";
+vi.mock("../db.server", () => ({ getDb: () => mockDb }));
+
 import { syncPlanFromShopify, getCurrentPlan, managedPricingUrl } from "../services/billing/billing.server";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockDb = db as any;
 
 function makeAdmin(activeSubscriptions: Array<{ name: string; status: string }>) {
   return {
@@ -62,7 +62,7 @@ describe("syncPlanFromShopify", () => {
     });
     const admin = makeAdmin([{ name: "Unlimited", status: "ACTIVE" }]);
 
-    const plan = await syncPlanFromShopify("test.myshopify.com", admin);
+    const plan = await syncPlanFromShopify("test.myshopify.com", admin, mockDb as never);
 
     expect(plan).toBe("unlimited");
     expect(mockDb.update).toHaveBeenCalled();
@@ -80,7 +80,7 @@ describe("syncPlanFromShopify", () => {
     });
     const admin = makeAdmin([{ name: "Standard", status: "ACTIVE" }]);
 
-    const plan = await syncPlanFromShopify("test.myshopify.com", admin);
+    const plan = await syncPlanFromShopify("test.myshopify.com", admin, mockDb as never);
 
     expect(plan).toBe("standard");
     expect(updateChain.set).toHaveBeenCalledWith(
@@ -97,7 +97,7 @@ describe("syncPlanFromShopify", () => {
     });
     const admin = makeAdmin([]);
 
-    const plan = await syncPlanFromShopify("test.myshopify.com", admin);
+    const plan = await syncPlanFromShopify("test.myshopify.com", admin, mockDb as never);
 
     expect(plan).toBe("free");
     expect(updateChain.set).toHaveBeenCalledWith(
@@ -117,7 +117,7 @@ describe("syncPlanFromShopify", () => {
       { name: "Standard", status: "PENDING" },
     ]);
 
-    const plan = await syncPlanFromShopify("test.myshopify.com", admin);
+    const plan = await syncPlanFromShopify("test.myshopify.com", admin, mockDb as never);
 
     expect(plan).toBe("free");
   });
@@ -131,7 +131,7 @@ describe("syncPlanFromShopify", () => {
     });
     const admin = makeAdmin([{ name: "Unlimited", status: "ACTIVE" }]);
 
-    const plan = await syncPlanFromShopify("test.myshopify.com", admin);
+    const plan = await syncPlanFromShopify("test.myshopify.com", admin, mockDb as never);
 
     expect(plan).toBe("unlimited");
     expect(mockDb.update).not.toHaveBeenCalled();
@@ -141,7 +141,7 @@ describe("syncPlanFromShopify", () => {
     mockDb.query.shops.findFirst.mockResolvedValue(null);
     const admin = makeAdmin([{ name: "Unlimited", status: "ACTIVE" }]);
 
-    const plan = await syncPlanFromShopify("missing.myshopify.com", admin);
+    const plan = await syncPlanFromShopify("missing.myshopify.com", admin, mockDb as never);
 
     expect(plan).toBe("free");
     expect(mockDb.update).not.toHaveBeenCalled();
@@ -158,7 +158,7 @@ describe("syncPlanFromShopify", () => {
       graphql: vi.fn().mockRejectedValue(new Error("network down")),
     };
 
-    const plan = await syncPlanFromShopify("test.myshopify.com", admin);
+    const plan = await syncPlanFromShopify("test.myshopify.com", admin, mockDb as never);
 
     expect(plan).toBe("free");
     // No write attempted on error
@@ -186,16 +186,9 @@ describe("managedPricingUrl", () => {
     );
   });
 
-  it("uses SHOPIFY_APP_HANDLE env var when set", () => {
-    const original = process.env.SHOPIFY_APP_HANDLE;
-    process.env.SHOPIFY_APP_HANDLE = "priceanchor-test";
-    try {
-      expect(managedPricingUrl()).toBe(
-        "shopify://admin/charges/priceanchor-test/pricing_plans",
-      );
-    } finally {
-      if (original === undefined) delete process.env.SHOPIFY_APP_HANDLE;
-      else process.env.SHOPIFY_APP_HANDLE = original;
-    }
+  it("uses the given handle", () => {
+    expect(managedPricingUrl("priceanchor-test")).toBe(
+      "shopify://admin/charges/priceanchor-test/pricing_plans",
+    );
   });
 });

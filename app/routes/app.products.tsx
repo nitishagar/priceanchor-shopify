@@ -1,7 +1,8 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { authenticate } from "../shopify.server";
-import { db } from "../db.server";
+import { getShopify } from "../shopify.server";
+import { getDb } from "../db.server";
+import { envFromContext } from "../lib/server-env";
 import { priceSnapshots, shops } from "../db/schema";
 import { desc, eq } from "drizzle-orm";
 import { getPlanCapabilities } from "../services/plan-enforcer.server";
@@ -23,10 +24,13 @@ interface LoaderData {
   plan: Plan;
 }
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request, context }: LoaderFunctionArgs) => {
+  const env = envFromContext(context);
+  const { authenticate } = getShopify(env);
   const { session } = await authenticate.admin(request);
+  const dbClient = getDb(env.DATABASE_URL);
 
-  const shopRecord = await db.query.shops.findFirst({
+  const shopRecord = await dbClient.query.shops.findFirst({
     where: eq(shops.domain, session.shop),
   });
   const plan = ((shopRecord?.plan ?? "free") as Plan) ?? "free";
@@ -36,7 +40,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return { products: [], canExport, plan } satisfies LoaderData;
   }
 
-  const rows = await db.query.priceSnapshots.findMany({
+  const rows = await dbClient.query.priceSnapshots.findMany({
     where: eq(priceSnapshots.shopId, shopRecord.id),
     orderBy: [desc(priceSnapshots.capturedAt)],
     limit: 5000,

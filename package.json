@@ -47,6 +47,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.70.0",
+    "@cloudflare/workers-types": "^5.20261119.1",
     "@shopify/api-codegen-preset": "^1.2.0",
     "@shopify/polaris-types": "^1.0.1",
     "@types/eslint": "^9.6.1",

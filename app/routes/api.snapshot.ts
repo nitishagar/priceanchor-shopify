@@ -1,15 +1,18 @@
 import type { ActionFunctionArgs } from "react-router";
 import { timingSafeEqual } from "node:crypto";
-import { unauthenticated } from "../shopify.server";
-import { db } from "../db.server";
+import { getShopify } from "../shopify.server";
+import { getDb } from "../db.server";
+import { envFromContext } from "../lib/server-env";
 import { runSnapshotForAllShops } from "../services/snapshot.server";
 import type { AdminGraphQLClient } from "../services/graphql-types.server";
 
 // POST /api/snapshot — daily backup capture for every shop.
 // Auth: Authorization: Bearer $CRON_SECRET (timing-safe compare).
 // Fails closed (500) when CRON_SECRET is unset.
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const secret = process.env.CRON_SECRET ?? "";
+export const action = async ({ request, context }: ActionFunctionArgs) => {
+  const env = envFromContext(context);
+  const { unauthenticated } = getShopify(env);
+  const secret = env.CRON_SECRET ?? "";
   if (!secret) {
     return Response.json(
       { error: "snapshot job not configured" },
@@ -36,7 +39,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     } catch {
       return null;
     }
-  }, db);
+  }, getDb(env.DATABASE_URL));
 
   return Response.json({
     shops: run.shops,

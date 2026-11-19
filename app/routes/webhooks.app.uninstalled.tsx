@@ -1,7 +1,10 @@
 import type { ActionFunctionArgs } from "react-router";
-import { authenticate, sessionStorage } from "../shopify.server";
+import { getShopify } from "../shopify.server";
+import { envFromContext } from "../lib/server-env";
 
-export const action = async ({ request }: ActionFunctionArgs) => {
+export const action = async ({ request, context }: ActionFunctionArgs) => {
+  const env = envFromContext(context);
+  const { authenticate, sessionStorage } = getShopify(env);
   const { shop, session, topic } = await authenticate.webhook(request);
   console.log(`Received ${topic} webhook for ${shop}`);
 

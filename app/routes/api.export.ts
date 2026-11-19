@@ -1,6 +1,7 @@
 import type { LoaderFunctionArgs } from "react-router";
-import { authenticate } from "../shopify.server";
-import { db } from "../db.server";
+import { getShopify } from "../shopify.server";
+import { getDb } from "../db.server";
+import { envFromContext } from "../lib/server-env";
 import { priceSnapshots, shops } from "../db/schema";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 import {
@@ -15,8 +16,11 @@ import {
 
 // GET /api/export?format=csv|pdf&product_id=&from=&to=
 // Omnibus evidence export. Standard/Unlimited only (free plan: 403).
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request, context }: LoaderFunctionArgs) => {
+  const env = envFromContext(context);
+  const { authenticate } = getShopify(env);
   const { session } = await authenticate.admin(request);
+  const dbClient = getDb(env.DATABASE_URL);
   const url = new URL(request.url);
   const format = (url.searchParams.get("format") ?? "csv").toLowerCase();
   const productId = url.searchParams.get("product_id") ?? undefined;
@@ -30,7 +34,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     );
   }
 
-  const shopRecord = await db.query.shops.findFirst({
+  const shopRecord = await dbClient.query.shops.findFirst({
     where: eq(shops.domain, session.shop),
   });
   if (!shopRecord) {
@@ -66,7 +70,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     }
   }
 
-  const rows = await db.query.priceSnapshots.findMany({
+  const rows = await dbClient.query.priceSnapshots.findMany({
     where: and(...conditions),
     orderBy: [desc(priceSnapshots.capturedAt)],
     limit: 10000,
