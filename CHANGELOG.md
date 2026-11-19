@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.2.0 — 2026-11-19
+
+Gap closure over the scaffold (US mode, scheduling, tier enforcement):
+
+- US storefront mode: `former_price_<market>` metafields (90-day lowest +
+  last-offered date) and "Previously $X — last offered Mon YYYY" framing
+  for US shoppers; EU 30-day line unchanged.
+- Localized EU phrasing in 8 languages (EN/DE/FR/ES/IT/NL/PL/SV) via theme
+  locale keys passed to the engine as data attributes.
+- Stale-sale auto-clear is now wired: webhook/snapshot captures clear
+  stale-tier anchors when the shop enables it (Unlimited plan enforced
+  in the service and the settings action).
+- Tier map: Standard = CSV export + stale flagging; Unlimited adds PDF
+  export + auto-clear. `/api/export` gates PDF to Unlimited.
+- Daily snapshot backup: `POST /api/snapshot` (Bearer CRON_SECRET)
+  re-captures every shop's catalog via offline sessions, scheduled
+  14:00 UTC by `.github/workflows/snapshot.yml`.
+- Site demo gains a US/EU market switch; engine behavior + locale suites
+  added (26 node:test cases, smoke green).
+- 109 vitest cases; `npm run validate` green; no schema drift.
+- Pin `sst` to 4.5.9 (matches stockguard; newer SST needs node ≥ 22).
+
 ## 0.1.0 — 2026-11-19
 
 Initial PriceAnchor implementation (scaffolded from the dualunit skeleton,
