@@ -3,6 +3,7 @@ import { createRequestHandler, type ServerBuild } from "react-router";
 // declaration). @react-router/dev v7 provides NO Vite-built worker entry, so
 // a dedicated worker build (vite.worker.config.ts) bundles this file against
 // the react-router build output. Deploy order: npm run build, then deploy.
+// eslint-disable-next-line import/no-unresolved -- build output exists only post-build; bundlers resolve via tsconfig paths
 import * as serverBuild from "@priceanchor/server-build";
 
 const requestHandler = createRequestHandler(

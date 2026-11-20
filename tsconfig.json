@@ -2,7 +2,6 @@
   "include": ["env.d.ts", "**/*.ts", "**/*.tsx", ".react-router/types/**/*"],
   "exclude": ["node_modules", "drizzle.config.ts"],
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "@priceanchor/server-build": ["./build/server/index.js"]
     },
