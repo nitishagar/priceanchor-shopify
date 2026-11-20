@@ -31,7 +31,10 @@ there is no auto-submit script, by design.
 
 - [x] GitHub Secrets (exactly 4): `DATABASE_URL` (Neon `priceanchor`
       project, pooled URI), `CLOUDFLARE_API_TOKEN`, `APP_URL`
-      (`https://priceanchor.applair.in`), `CRON_SECRET`.
+      (`https://priceanchor.nitishagar.workers.dev` — the snapshot caller
+      uses workers.dev because the zone bot-challenges Actions IPs on the
+      custom domain; all merchant-facing URLs stay on applair.in),
+      `CRON_SECRET`.
 - [x] Worker secrets (exactly 4, same names where shared):
       `DATABASE_URL`, `SHOPIFY_API_KEY`, `SHOPIFY_API_SECRET`,
       `CRON_SECRET`. GitHub `CRON_SECRET` and Worker `CRON_SECRET`
