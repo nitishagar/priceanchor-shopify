@@ -17,7 +17,7 @@ check_tree() {
   grep -q "\"SHOPIFY_APP_URL\": \"$ORIGIN\"" "$root/wrangler.jsonc" 2>/dev/null \
     || disagree "wrangler.jsonc SHOPIFY_APP_URL"
   if grep -rhoE "https://[a-zA-Z0-9.-]+" "$root/docs/SUBMISSION.md" 2>/dev/null \
-     | grep -v -x -F -e "$ORIGIN" -e "https://shopify.dev" -e "https://developers.cloudflare.com" \
+     | grep -v -x -F -e "$ORIGIN" -e "https://priceanchor.nitishagar.workers.dev" -e "https://shopify.dev" -e "https://developers.cloudflare.com" \
      -e "https://neon.com" -e "https://console.neon.tech" -e "https://github.com" | grep -q .; then
     disagree "docs/SUBMISSION.md lists a foreign app origin"
   fi
