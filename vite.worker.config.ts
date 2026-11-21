@@ -8,15 +8,18 @@ import tsconfigPaths from "vite-tsconfig-paths";
 //
 // SSR-shaped (not lib): dependencies are bundled in, while Node builtins
 // stay as `node:` imports served by the Workers nodejs_compat runtime.
-// react-dom/server is pinned to the node build (the browser build lacks
-// renderToPipeableStream, which entry.server requires).
+// react-dom/server is pinned to the browser build: entry.server uses
+// renderToReadableStream (Web Streams, native on Workers), which the node
+// build (server.node) does NOT export — aliasing to server.node breaks all
+// SSR with a 500. Mirrors DualUnit, where wrangler resolves the same
+// specifier to the browser build via worker conditions.
 export default defineConfig({
   plugins: [tsconfigPaths()],
   resolve: {
     alias: [
       {
         find: /^react-dom\/server$/,
-        replacement: "react-dom/server.node",
+        replacement: "react-dom/server.browser",
       },
     ],
   },

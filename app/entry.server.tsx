@@ -1,6 +1,5 @@
 import type { AppLoadContext, EntryContext } from "react-router";
 import { ServerRouter } from "react-router";
-import { isbot } from "isbot";
 import { renderToReadableStream } from "react-dom/server";
 
 // Web-stream server entry: runs identically in Node 20+ (`npm run build`)
@@ -29,9 +28,13 @@ export default async function handleRequest(
     });
   }
 
-  const userAgent = request.headers.get("user-agent");
-  const waitForAll =
-    (userAgent && isbot(userAgent)) || routerContext.isSpaMode;
+  // Always wait for the full render (not just bots): React Router wraps the
+  // server-handoff stream in <Suspense>, and any chunk that resolves after
+  // the shell flush is emitted as a post-</html> <template>/$RC splice. The
+  // $RC marker rewrite can land on a whitespace text node (Cloudflare
+  // injects its beacon script before </body>), leaving a stray "$" glyph in
+  // the live DOM. Loaders already ran before render, so allReady is ~free.
+  const waitForAll = true;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), streamTimeout + 1000);
@@ -48,7 +51,7 @@ export default async function handleRequest(
       },
     );
 
-    // Bots and SPA mode wait for all content before responding.
+    // Always buffer the full render (see above) before responding.
     if (waitForAll) {
       await (body as ReadableStream & { allReady?: Promise<void> }).allReady;
     }
