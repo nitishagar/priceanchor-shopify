@@ -168,6 +168,58 @@ describe("handleProductPriceCapture", () => {
     );
   });
 
+  it("computes the Omnibus prior from pre-drop history (read before insert)", async () => {
+    mockDb.query.priceSnapshots.findFirst.mockResolvedValue({ id: 1 }); // known product
+    vi.mocked(diffVariantPrices).mockResolvedValue([
+      {
+        variantId: "11",
+        priceMinor: 1799,
+        compareAtMinor: 2499,
+        previousPriceMinor: 1999,
+        previousCompareAtMinor: null,
+        changed: true,
+      },
+    ]);
+    vi.mocked(recordSnapshot).mockResolvedValue({ id: 10 } as never);
+    const preDropHistory = [
+      { priceMinor: 1999, capturedAt: new Date("2026-11-01T00:00:00Z") },
+    ];
+    vi.mocked(snapshotsForVariant).mockResolvedValue(preDropHistory as never);
+    // Lowest of the pre-drop history only: the just-recorded 1799 row must
+    // not fold into the minimum, or the storefront line hides forever.
+    vi.mocked(euPriorPrice).mockReturnValue({
+      lowestMinor: 1999,
+      snapshotCount: 1,
+      windowDays: 30,
+      windowStart: new Date(),
+      asOf: new Date(),
+    });
+    vi.mocked(writeLowestPriceMetafield).mockResolvedValue({
+      ok: true,
+      key: "lowest_price_default",
+    });
+
+    const result = await handleProductPriceCapture(
+      SHOP.domain,
+      { graphql: vi.fn() },
+      {
+        id: 123,
+        variants: [{ id: 11, price: "17.99", compare_at_price: "24.99" }],
+      },
+      mockDb as never,
+    );
+
+    expect(result.recorded).toBe(1);
+    // History read precedes the insert: the prior excludes the new row.
+    expect(
+      vi.mocked(snapshotsForVariant).mock.invocationCallOrder[0],
+    ).toBeLessThan(vi.mocked(recordSnapshot).mock.invocationCallOrder[0]);
+    expect(vi.mocked(euPriorPrice).mock.calls[0][0]).toBe(preDropHistory);
+    expect(
+      vi.mocked(writeLowestPriceMetafield).mock.calls[0][3],
+    ).toMatchObject({ lowestMinor: 1999, currentMinor: 1799 });
+  });
+
   it("records nothing when no price changed", async () => {
     mockDb.query.priceSnapshots.findFirst.mockResolvedValue({ id: 1 });
     vi.mocked(diffVariantPrices).mockResolvedValue([

@@ -128,6 +128,21 @@ export async function handleProductPriceCapture(
       result.skippedUnchanged += 1;
       continue;
     }
+    // Read history BEFORE recording: the Omnibus prior price is the lowest
+    // price that prevailed before the current price (Directive 2019/2161 Art
+    // 6a). Reading after the insert would fold the new row into the minimum,
+    // making lowest == current after every drop and hiding the storefront
+    // line permanently.
+    const history = admin
+      ? await snapshotsForVariant(
+          shopRecord.id,
+          productId,
+          d.variantId,
+          dbClient,
+          market,
+          500,
+        )
+      : [];
     await recordSnapshot(
       {
         shopId: shopRecord.id,
@@ -144,14 +159,6 @@ export async function handleProductPriceCapture(
     result.recorded += 1;
 
     if (admin) {
-      const history = await snapshotsForVariant(
-        shopRecord.id,
-        productId,
-        d.variantId,
-        dbClient,
-        market,
-        500,
-      );
       const ownerId = `gid://shopify/Product/${productId}`;
       const prior = euPriorPrice(history);
       if (prior.lowestMinor !== null) {
