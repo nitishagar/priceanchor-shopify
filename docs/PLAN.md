@@ -31,7 +31,8 @@ undercuts at Free / $3.99 / $5.99 with per-product (not per-variant) limits.
   `app/*` lifecycle set.
 - Theme app extension `priceanchor`: block `lowest-price.liquid` +
   dependency-free `assets/priceanchor.js` reading app-owned
-  `$app:priceanchor` metafields (`lowest_price_<market>`, PUBLIC_READ).
+  `priceanchor` metafields (`lowest_price_<market>`), plain metafieldsSet
+  like DualUnit (no `access` input, no definitions).
 - Stale-sale guard: 60/75/90-day compare-at age tiers (configurable per shop),
   auto-clear via Admin GraphQL `productVariantUpdate`.
 - Export: `GET /api/export?format=csv|pdf` — hand-rolled CSV + minimal PDF,

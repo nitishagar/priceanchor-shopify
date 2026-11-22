@@ -17,7 +17,7 @@ After every code change, you MUST:
   - `price-history.server.ts` - Snapshot store + webhook payload price-diffing
   - `price-webhook.server.ts` - products/create|update|delete orchestration
   - `lowest-price.server.ts` - EU-30d / CA-90d compute (re-exports lib)
-  - `metafields.server.ts` - App-owned per-market lowest-price metafields
+  - `metafields.server.ts` - Per-market lowest-price metafields (plain namespace)
   - `stale-guard.server.ts` - Compare-at age tiers + GraphQL auto-clear
   - `export.server.ts` - Dependency-free CSV + PDF writers
   - `graphql-types.server.ts` - Shared AdminGraphQLClient structural type

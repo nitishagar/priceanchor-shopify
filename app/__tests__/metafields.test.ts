@@ -59,107 +59,13 @@ describe("writeLowestPriceMetafield", () => {
     windowDays: 30,
   };
 
-  it("ensures the definition first, then sets without an access field", async () => {
-    const graphql = vi
-      .fn()
-      .mockResolvedValueOnce({
-        json: async () => ({
-          data: {
-            metafieldDefinitionCreate: {
-              createdDefinition: { id: "gid://shopify/MetafieldDefinition/1" },
-              userErrors: [],
-            },
-          },
-        }),
-      })
-      .mockResolvedValueOnce({
-        json: async () => ({
-          data: {
-            metafieldsSet: {
-              metafields: [{ namespace: METAFIELD_NAMESPACE }],
-              userErrors: [],
-            },
-          },
-        }),
-      });
-
-    const result = await writeLowestPriceMetafield(
-      { graphql },
-      "gid://shopify/Product/123",
-      "DE",
-      value,
-    );
-
-    expect(result).toEqual({ ok: true, key: "lowest_price_de" });
-    expect(graphql).toHaveBeenCalledTimes(2);
-    const definitionVariables = graphql.mock.calls[0][1].variables;
-    expect(definitionVariables.definition).toMatchObject({
-      namespace: "$app:priceanchor",
-      key: "lowest_price_de",
-      type: "json",
-      ownerType: "PRODUCT",
-      access: { storefront: "PUBLIC_READ" },
-    });
-    const setVariables = graphql.mock.calls[1][1].variables;
-    expect(setVariables.metafields[0]).toMatchObject({
-      namespace: "$app:priceanchor",
-      key: "lowest_price_de",
-      type: "json",
-      ownerId: "gid://shopify/Product/123",
-    });
-    // MetafieldsSetInput rejects `access`: storefront visibility lives on
-    // the definition (passing it failed every write in production).
-    expect(setVariables.metafields[0]).not.toHaveProperty("access");
-    expect(JSON.parse(setVariables.metafields[0].value)).toEqual(value);
-  });
-
-  it("treats an already-taken definition as success", async () => {
-    const graphql = vi
-      .fn()
-      .mockResolvedValueOnce({
-        json: async () => ({
-          data: {
-            metafieldDefinitionCreate: {
-              createdDefinition: null,
-              userErrors: [
-                {
-                  field: ["namespace", "key"],
-                  message: "Namespace and key is already in use for product metafields",
-                },
-              ],
-            },
-          },
-        }),
-      })
-      .mockResolvedValueOnce({
-        json: async () => ({
-          data: {
-            metafieldsSet: {
-              metafields: [{ namespace: METAFIELD_NAMESPACE }],
-              userErrors: [],
-            },
-          },
-        }),
-      });
-
-    const result = await writeLowestPriceMetafield(
-      { graphql },
-      "gid://shopify/Product/123",
-      "DE",
-      value,
-    );
-
-    expect(result).toEqual({ ok: true, key: "lowest_price_de" });
-    expect(graphql).toHaveBeenCalledTimes(2);
-  });
-
-  it("short-circuits the set when the definition fails", async () => {
+  it("writes a plain-namespace JSON set with no access field", async () => {
     const graphql = vi.fn().mockResolvedValue({
       json: async () => ({
         data: {
-          metafieldDefinitionCreate: {
-            createdDefinition: null,
-            userErrors: [{ field: ["ownerType"], message: "boom" }],
+          metafieldsSet: {
+            metafields: [{ namespace: METAFIELD_NAMESPACE }],
+            userErrors: [],
           },
         },
       }),
@@ -172,34 +78,32 @@ describe("writeLowestPriceMetafield", () => {
       value,
     );
 
-    expect(result.ok).toBe(false);
-    expect(result.error).toContain("boom");
+    expect(result).toEqual({ ok: true, key: "lowest_price_de" });
     expect(graphql).toHaveBeenCalledTimes(1);
+    const variables = graphql.mock.calls[0][1].variables;
+    expect(variables.metafields[0]).toMatchObject({
+      namespace: "priceanchor",
+      key: "lowest_price_de",
+      type: "json",
+      ownerId: "gid://shopify/Product/123",
+    });
+    // MetafieldsSetInput rejects `access` (passing it failed every write
+    // in production); the DualUnit-proven plain set carries none.
+    expect(variables.metafields[0]).not.toHaveProperty("access");
+    expect(JSON.parse(variables.metafields[0].value)).toEqual(value);
   });
 
   it("surfaces userErrors", async () => {
-    const graphql = vi
-      .fn()
-      .mockResolvedValueOnce({
-        json: async () => ({
-          data: {
-            metafieldDefinitionCreate: {
-              createdDefinition: { id: "gid://shopify/MetafieldDefinition/1" },
-              userErrors: [],
-            },
+    const graphql = vi.fn().mockResolvedValue({
+      json: async () => ({
+        data: {
+          metafieldsSet: {
+            metafields: [],
+            userErrors: [{ field: ["ownerId"], message: "not found" }],
           },
-        }),
-      })
-      .mockResolvedValueOnce({
-        json: async () => ({
-          data: {
-            metafieldsSet: {
-              metafields: [],
-              userErrors: [{ field: ["ownerId"], message: "not found" }],
-            },
-          },
-        }),
-      });
+        },
+      }),
+    });
 
     const result = await writeLowestPriceMetafield(
       { graphql },
@@ -234,29 +138,17 @@ describe("encode/decodeFormerPrice", () => {
 });
 
 describe("writeFormerPriceMetafield", () => {
-  it("ensures the former_price definition, then sets without access", async () => {
-    const graphql = vi
-      .fn()
-      .mockResolvedValueOnce({
-        json: async () => ({
-          data: {
-            metafieldDefinitionCreate: {
-              createdDefinition: { id: "gid://shopify/MetafieldDefinition/2" },
-              userErrors: [],
-            },
+  it("writes the former_price key as a plain set", async () => {
+    const graphql = vi.fn().mockResolvedValue({
+      json: async () => ({
+        data: {
+          metafieldsSet: {
+            metafields: [{ namespace: METAFIELD_NAMESPACE }],
+            userErrors: [],
           },
-        }),
-      })
-      .mockResolvedValueOnce({
-        json: async () => ({
-          data: {
-            metafieldsSet: {
-              metafields: [{ namespace: METAFIELD_NAMESPACE }],
-              userErrors: [],
-            },
-          },
-        }),
-      });
+        },
+      }),
+    });
 
     const result = await writeFormerPriceMetafield(
       { graphql },
@@ -271,17 +163,10 @@ describe("writeFormerPriceMetafield", () => {
     );
 
     expect(result).toEqual({ ok: true, key: "former_price_us" });
-    const definitionVariables = graphql.mock.calls[0][1].variables;
-    expect(definitionVariables.definition).toMatchObject({
-      namespace: "$app:priceanchor",
-      key: "former_price_us",
-      type: "json",
-      ownerType: "PRODUCT",
-      access: { storefront: "PUBLIC_READ" },
-    });
-    const setVariables = graphql.mock.calls[1][1].variables;
+    expect(graphql).toHaveBeenCalledTimes(1);
+    const setVariables = graphql.mock.calls[0][1].variables;
     expect(setVariables.metafields[0]).toMatchObject({
-      namespace: "$app:priceanchor",
+      namespace: "priceanchor",
       key: "former_price_us",
       type: "json",
       ownerId: "gid://shopify/Product/123",

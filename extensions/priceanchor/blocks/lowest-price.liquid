@@ -1,7 +1,7 @@
 {% comment %}
   PriceAnchor — market-adaptive reference-price line.
   EU visitors: statutory lowest price of the last 30 days (Omnibus Art 6a),
-  rendered from the app-owned `$app:priceanchor` metafield
+  rendered from the `priceanchor` metafield
   `lowest_price_<market>` (JSON: {"lowestMinor":1299,"currency":"EUR",
   "capturedAt":"...","windowDays":30}). The % off is computed from that
   prior price (Aldi rule), never from the live compare_at_price.
@@ -16,14 +16,14 @@
   assign country_code = localization.country.iso_code | upcase | default: ''
   assign market_key = localization.country.iso_code | downcase | default: 'default'
   assign prior_key = 'lowest_price_' | append: market_key
-  assign prior_json = product.metafields['$app:priceanchor'][prior_key].value
+  assign prior_json = product.metafields['priceanchor'][prior_key].value
   if prior_json == blank
-    assign prior_json = product.metafields['$app:priceanchor'].lowest_price_default.value
+    assign prior_json = product.metafields['priceanchor'].lowest_price_default.value
   endif
   assign former_key = 'former_price_' | append: market_key
-  assign former_json = product.metafields['$app:priceanchor'][former_key].value
+  assign former_json = product.metafields['priceanchor'][former_key].value
   if former_json == blank
-    assign former_json = product.metafields['$app:priceanchor'].former_price_default.value
+    assign former_json = product.metafields['priceanchor'].former_price_default.value
   endif
   assign is_us = false
   if country_code == 'US'
