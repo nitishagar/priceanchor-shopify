@@ -4,7 +4,7 @@
  * leaves the browser.
  *
  * EU mode (default): renders the statutory lowest-price line from the
- * app-owned metafield JSON embedded in data-prior, composed with the
+ * priceanchor metafield JSON embedded in data-prior, composed with the
  * theme-locale sentence parts in data-l10n-prefix / data-l10n-infix.
  * % off mirrors the server discountFromPrior algorithm (Aldi rule): it is
  * computed from the 30-day prior price, never from the live compare-at.
