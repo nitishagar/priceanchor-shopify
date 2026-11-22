@@ -81,7 +81,7 @@ const { writeFileSync } = await import("node:fs");
 
 const [op, ...args] = process.argv.slice(2);
 if (!op) {
-  console.error("usage: node cdp.mjs <op> [args...]  (tabs|newtab|nav|shot|eval|tree|frameval|upload|win|front)");
+  console.error("usage: node cdp.mjs <op> [args...]  (tabs|newtab|nav|shot|eval|tree|frameval|upload|win|front|type|key)");
   process.exit(2);
 }
 
@@ -155,18 +155,16 @@ switch (op) {
   case "upload": {
     const [ref, idx, ...files] = args;
     await withTarget(ref, async (ws) => {
-      const found = await send(ws, "Runtime.evaluate", {
-        expression: `(() => { const els = [...document.querySelectorAll('input[type=file]')]; return els.length; })()`,
-        returnByValue: true,
+      await send(ws, "DOM.enable");
+      const doc = await send(ws, "DOM.getDocument", { depth: 0 });
+      const q = await send(ws, "DOM.querySelectorAll", {
+        nodeId: doc.root.nodeId,
+        selector: "input[type=file]",
       });
-      if (Number(found.result?.value || 0) <= Number(idx)) {
-        throw new Error(`only ${found.result?.value} file inputs, wanted #${idx}`);
+      if ((q.nodeIds || []).length <= Number(idx)) {
+        throw new Error(`only ${(q.nodeIds || []).length} file inputs, wanted #${idx}`);
       }
-      const obj = await send(ws, "Runtime.evaluate", {
-        expression: `[...document.querySelectorAll('input[type=file]')][${idx}]`,
-      });
-      const desc = await send(ws, "DOM.describeNode", { objectId: obj.result.objectId });
-      await send(ws, "DOM.setFileInputFiles", { nodeId: desc.node.nodeId, files });
+      await send(ws, "DOM.setFileInputFiles", { nodeId: q.nodeIds[Number(idx)], files });
       console.log(`set ${files.length} file(s) on input #${idx}`);
     });
     break;
@@ -182,9 +180,158 @@ switch (op) {
     });
     break;
   }
+  case "winpos": {
+    await withTarget(args[0], async (ws, t) => {
+      const w = await send(ws, "Browser.getWindowForTarget", { targetId: t.id });
+      console.log(JSON.stringify(w));
+    });
+    break;
+  }
   case "front": {
     await withTarget(args[0], (ws) => send(ws, "Page.bringToFront"));
     console.log("front");
+    break;
+  }
+  case "type": {
+    const [ref, ...text] = args;
+    await withTarget(ref, async (ws) => {
+      await send(ws, "Input.insertText", { text: text.join(" ") });
+      console.log("typed");
+    });
+    break;
+  }
+  case "click": {
+    const [ref, x, y] = args;
+    await withTarget(ref, async (ws) => {
+      for (const type of ["mousePressed", "mouseReleased"]) {
+        await send(ws, "Input.dispatchMouseEvent", {
+          type,
+          x: Number(x),
+          y: Number(y),
+          button: "left",
+          clickCount: 1,
+        });
+      }
+      console.log(`clicked ${x},${y}`);
+    });
+    break;
+  }
+  case "drag": {
+    const [ref, x1, y1, x2, y2] = args;
+    await withTarget(ref, async (ws) => {
+      await send(ws, "Input.dispatchMouseEvent", {
+        type: "mousePressed",
+        x: Number(x1),
+        y: Number(y1),
+        button: "left",
+        clickCount: 1,
+      });
+      for (let i = 1; i <= 8; i += 1) {
+        await send(ws, "Input.dispatchMouseEvent", {
+          type: "mouseMoved",
+          x: Number(x1) + ((Number(x2) - Number(x1)) * i) / 8,
+          y: Number(y1) + ((Number(y2) - Number(y1)) * i) / 8,
+          button: "left",
+          buttons: 1,
+        });
+      }
+      await send(ws, "Input.dispatchMouseEvent", {
+        type: "mouseReleased",
+        x: Number(x2),
+        y: Number(y2),
+        button: "left",
+        clickCount: 1,
+      });
+      console.log(`dragged ${x1},${y1} -> ${x2},${y2}`);
+    });
+    break;
+  }
+  case "cast": {
+    // cast <ref> <seconds> <outdir> — record JPEG frames via Page.screencast.
+    const [ref, secs, outdir] = args;
+    const { mkdirSync } = await import("node:fs");
+    mkdirSync(outdir, { recursive: true });
+    await withTarget(ref, async (ws) => {
+      let n = 0;
+      const onFrame = (ev) => {
+        let msg;
+        try {
+          msg = JSON.parse(ev.data);
+        } catch {
+          return;
+        }
+        if (msg.method === "Page.screencastFrame") {
+          n += 1;
+          writeFileSync(
+            `${outdir}/frame-${String(n).padStart(4, "0")}.jpg`,
+            Buffer.from(msg.params.data, "base64"),
+          );
+          ws.send(
+            JSON.stringify({
+              id: Math.floor(Math.random() * 1e9),
+              method: "Page.screencastFrameAck",
+              params: { sessionId: msg.params.sessionId },
+            }),
+          );
+        }
+      };
+      ws.addEventListener("message", onFrame);
+      await send(ws, "Page.startScreencast", {
+        format: "jpeg",
+        quality: 70,
+        maxWidth: 1280,
+        maxHeight: 720,
+      });
+      await sleep(Number(secs) * 1000);
+      await send(ws, "Page.stopScreencast");
+      ws.removeEventListener("message", onFrame);
+      console.log(`cast: ${n} frames in ${outdir}`);
+    });
+    break;
+  }
+  case "burst": {
+    // burst <ref> <frames> <intervalMs> <outdir> — N viewport captures back to back.
+    const [ref, frames, intervalMs, outdir] = args;
+    const { mkdirSync } = await import("node:fs");
+    mkdirSync(outdir, { recursive: true });
+    await withTarget(ref, async (ws) => {
+      for (let i = 1; i <= Number(frames); i += 1) {
+        const r = await send(ws, "Page.captureScreenshot", { format: "jpeg", quality: 75 });
+        writeFileSync(
+          `${outdir}/frame-${String(i).padStart(4, "0")}.jpg`,
+          Buffer.from(r.data, "base64"),
+        );
+        await sleep(Number(intervalMs));
+      }
+      console.log(`burst: ${frames} frames in ${outdir}`);
+    });
+    break;
+  }
+  case "key": {
+    const [ref, key] = args;
+    const codes = {
+      Enter: ["Enter", 13],
+      Tab: ["Tab", 9],
+      Escape: ["Escape", 27],
+      F11: ["F11", 122],
+      ArrowDown: ["ArrowDown", 40],
+      ArrowUp: ["ArrowUp", 38],
+      ArrowLeft: ["ArrowLeft", 37],
+      ArrowRight: ["ArrowRight", 39],
+      " ": ["Space", 32],
+    };
+    const [code, windowsVirtualKeyCode] = codes[key] || [key, 0];
+    await withTarget(ref, async (ws) => {
+      for (const type of ["rawKeyDown", "keyUp"]) {
+        await send(ws, "Input.dispatchKeyEvent", {
+          type,
+          key,
+          code,
+          windowsVirtualKeyCode,
+        });
+      }
+      console.log(`key ${key}`);
+    });
     break;
   }
   default:

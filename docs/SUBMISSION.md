@@ -17,15 +17,18 @@ there is no auto-submit script, by design.
 
 ## 2. Partner Dashboard app
 
-- [ ] Create app (App Store distribution), copy `client_id` into `shopify.app.toml`.
-- [ ] App URL + redirect URLs → app URL (+ `/api/auth`).
-- [ ] Scopes: `read_products, write_products`.
-- [ ] Webhooks: `app/uninstalled`, `app/scopes_update`, `app_subscriptions/update`,
+- [x] Create app (App Store distribution), copy `client_id` into `shopify.app.toml`.
+- [x] Distribution confirmed Public (Nov 22, 2026; passkey handoff).
+- [x] App URL + redirect URLs → app URL (+ `/api/auth`).
+- [x] Scopes: `read_products, write_products`.
+- [x] Webhooks: `app/uninstalled`, `app/scopes_update`, `app_subscriptions/update`,
       `products/create`, `products/update`, `products/delete`, plus compliance
-      topics → `/webhooks`.
-- [ ] Managed Pricing plans: `Standard` $3.99, `Unlimited` $5.99 (+ annual variants
-      `Standard (annual)`, `Unlimited (annual)` — names must match
-      `app/services/billing/plan-mapping.ts`).
+      topics → `/webhooks` (products/update verified live: edit → snapshot).
+- [x] Managed Pricing plans: `standard` $3.99/mo + `unlimited` $5.99/mo
+      (7-day trials, free for dev stores; handles must match
+      `app/services/billing/plan-mapping.ts`). Annual variants deferred:
+      invoice display names cap at 18 chars and `Unlimited (annual)` is 19
+      (same as DualUnit).
 
 ## 3. Secrets & deploy
 
@@ -42,24 +45,27 @@ there is no auto-submit script, by design.
       workflow Bearer vs the route compare.
 - [x] `npm run build && npx wrangler deploy` → `priceanchor` Worker +
       `priceanchor.applair.in` custom domain serves the app.
-- [ ] Deploy config + theme extension: `shopify app deploy`.
-- [ ] Install on a dev store; change a price; verify history + the storefront
-      lowest-price line. No "Shopify" in URLs/emails; icon 1200x1200.
+- [x] Deploy config + theme extension: `shopify app deploy` (priceanchor-4 ★).
+- [x] Install on a dev store; change a price; verify history + the storefront
+      lowest-price line (seo-generator: "Lowest price in the last 30 days:
+      ₹2,299.95 (−4.3%)", math hand-checked). No "Shopify" in URLs/emails;
+      icon 1200x1200 uploaded (`docs/listing/icon-1200.png`).
 
 ## 4. Listing
 
-- [ ] Name: PriceAnchor. Category: Store design / Compliance.
-- [ ] Tagline: “EU Omnibus lowest-price tracking from automatic price history.”
-- [ ] Description: automatic per-market price history → statutory lowest price of
-      the last 30 days next to every reduction, Aldi-rule % off, stale-sale guard,
-      CSV/PDF evidence export, no customer data.
-- [ ] Screenshots: admin dashboard, products/history page, storefront lowest-price
-      line, stale-guard settings. Real UI only; no pricing in images; no stats,
-      superlatives, or testimonials. Demo screencast in English.
-- [ ] Support URL: `/support` on the app URL (+ support email).
-- [ ] Privacy URL: `/privacy` on the app URL.
-- [ ] Pricing: Free / $3.99 / $5.99 with 7-day trials. Test credentials for
-      reviewers incl. a 2FA-exempt account; emergency dev contact on file.
+- [x] Name: PriceAnchor. Category: Store design › Product display › Other.
+- [x] Introduction (100 chars): see `docs/listing/LISTING.md` (submitted verbatim).
+- [x] Details (500 chars) + 5 features: see `docs/listing/LISTING.md`.
+- [x] Screenshots (1600×900, `docs/listing/`): dashboard, products/history,
+      storefront lowest-price line (feature image), stale-guard settings.
+      Real UI only; no app pricing in images; no stats/superlatives.
+- [x] Demo screencast in English: `public/videos/priceanchor-onboarding.mp4`
+      (1280×720, 2fps, 196s) served from the app URL.
+- [x] Support: email `support@applair.in` + portal `/support` on the app URL.
+- [x] Privacy URL: `/privacy` on the app URL.
+- [x] Pricing display names + top features; discovery subtitle + search terms;
+      Online Store requirement; review + submission emails; test instructions
+      ("no account required" + numbered flow + demo storefront URL).
 
 ## 5. Review readiness
 
@@ -71,3 +77,6 @@ there is no auto-submit script, by design.
       SHOPIFY plans (free-APP-plan installs count; dev + free-trial stores
       excluded; no published apps = exempt). Keep a 12–15 buffer; counts update
       daily. Fix resubmits promptly to avoid Paused cooldowns.
+- [x] Org state Nov 22, 2026: DualUnit is Submitted (in review) → Partner
+      Dashboard shows "Submission limited" for PriceAnchor. Everything above
+      is prepared; click "Submit for review" once DualUnit's review resolves.
