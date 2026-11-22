@@ -1,12 +1,12 @@
 // App-owned per-market prior/lowest-price metafields.
 //
-// The storefront Liquid block reads these via shop/product metafields, so
-// writes use app-owned ($app namespace) definitions with
-// access.storefront = PUBLIC_READ (GraphQL access:{storefront:PUBLIC_READ}).
-// Key scheme: one metafield per market, keyed by the market key plus the
-// shopper's country (localization.country.iso_code, ISO 3166-1 alpha-2) at
-// render time. Value is a JSON string: {"lowestMinor":1299,"currency":"EUR",
-// "capturedAt":"...","windowDays":30}.
+// The storefront Liquid block reads these via product metafields, so each
+// key gets an app-owned ($app namespace) metafield DEFINITION with
+// access.storefront = PUBLIC_READ (storefront visibility lives on the
+// definition — MetafieldsSetInput has no `access` field, and passing one
+// fails every write). Key scheme: one metafield per market; value is a JSON
+// string: {"lowestMinor":1299,"currency":"EUR","capturedAt":"...",
+// "windowDays":30}.
 
 import type { AdminGraphQLClient } from "./graphql-types.server";
 
@@ -131,6 +131,7 @@ export async function writeLowestPriceMetafield(
     ownerId,
     metafieldKeyForMarket(market),
     encodeLowestPrice(value),
+    `PriceAnchor lowest price (${market})`,
   );
 }
 
@@ -147,7 +148,65 @@ export async function writeFormerPriceMetafield(
     ownerId,
     formerPriceKeyForMarket(market),
     encodeFormerPrice(value),
+    `PriceAnchor former price (${market})`,
   );
+}
+
+const METAFIELD_DEFINITION_CREATE_MUTATION = `#graphql
+  mutation PriceAnchorMetafieldDefinitionCreate($definition: MetafieldDefinitionCreateInput!) {
+    metafieldDefinitionCreate(definition: $definition) {
+      createdDefinition {
+        id
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+interface MetafieldDefinitionCreateResponse {
+  data?: {
+    metafieldDefinitionCreate?: {
+      createdDefinition?: { id: string } | null;
+      userErrors?: { field: string[] | null; message: string }[];
+    };
+  };
+}
+
+// Ensure the product-level JSON definition for `key` exists with storefront
+// PUBLIC_READ. Idempotent: an already-taken namespace+key is success (the
+// definition persists in Shopify; a create attempt per write is cheap and
+// self-heals if the merchant deletes the definition). Returns an error
+// string, or null when the definition exists.
+async function ensureProductJsonDefinition(
+  admin: AdminGraphQLClient,
+  key: string,
+  name: string,
+): Promise<string | null> {
+  const response = await admin.graphql(METAFIELD_DEFINITION_CREATE_MUTATION, {
+    variables: {
+      definition: {
+        name,
+        namespace: METAFIELD_NAMESPACE,
+        key,
+        type: "json",
+        ownerType: "PRODUCT",
+        access: { storefront: "PUBLIC_READ" },
+      },
+    },
+  });
+  const json = (await response.json()) as MetafieldDefinitionCreateResponse;
+  const errors =
+    json.data?.metafieldDefinitionCreate?.userErrors ?? [];
+  const real = errors.filter(
+    (e) => !/already|taken|exists|duplicate/i.test(e.message),
+  );
+  if (real.length > 0) {
+    return real.map((e) => e.message).join("; ");
+  }
+  return null;
 }
 
 async function writeJsonMetafield(
@@ -155,7 +214,16 @@ async function writeJsonMetafield(
   ownerId: string,
   key: string,
   value: string,
+  definitionName: string,
 ): Promise<MetafieldWriteResult> {
+  const definitionError = await ensureProductJsonDefinition(
+    admin,
+    key,
+    definitionName,
+  );
+  if (definitionError) {
+    return { ok: false, key, error: definitionError };
+  }
   const response = await admin.graphql(METAFIELDS_SET_MUTATION, {
     variables: {
       metafields: [
@@ -165,7 +233,6 @@ async function writeJsonMetafield(
           type: "json",
           value,
           ownerId,
-          access: { storefront: "PUBLIC_READ" },
         },
       ],
     },
