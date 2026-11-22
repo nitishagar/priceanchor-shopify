@@ -69,9 +69,13 @@ there is no auto-submit script, by design.
 
 ## 5. Review readiness
 
-- [ ] `npm run validate` green; CI gates (schema-drift, migration idempotency) green.
-- [ ] GDPR endpoints return 200/404 correctly (`gdpr-webhooks.test.ts`).
-- [ ] Test store login for reviewers + screencast of install → price change → history → storefront line.
+- [x] `npm run validate` green (18 files / 125 tests); CI gates green.
+- [x] GDPR endpoints return 200/404 correctly (`gdpr-webhooks.test.ts`).
+- [x] Automated checks: "Passed automated check for common errors" (Nov 22).
+- [x] Capabilities: none apply; AI self-review marked done; no customer data.
+- [x] Test instructions ("no account required" + numbered flow + demo
+      storefront URL + store password) + screencast (install → price change
+      → history → storefront line → settings).
 - [ ] Gate strategy (Nov 10, 2026 limits): one new app in review at a time; each
       published app in the org needs 10+ installs from active stores on paid
       SHOPIFY plans (free-APP-plan installs count; dev + free-trial stores
