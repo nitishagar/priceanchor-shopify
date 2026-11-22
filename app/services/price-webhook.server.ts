@@ -60,6 +60,32 @@ export interface PriceCaptureResult {
   autoClearErrors: string[];
 }
 
+// Snapshot/metafield currency: payload prices are always shop-currency
+// minor units, so label them with the shop's actual currencyCode (a wrong
+// label prints "$" on an INR store's storefront line). Falls back to USD
+// only when neither the payload nor the Admin API can say.
+async function resolveCurrency(
+  admin: AdminGraphQLClient | null,
+  payload: ProductWebhookPayload,
+): Promise<string> {
+  if (typeof payload.currency === "string" && payload.currency) {
+    return payload.currency;
+  }
+  if (admin) {
+    try {
+      const response = await admin.graphql("{ shop { currencyCode } }");
+      const json = (await response.json()) as {
+        data?: { shop?: { currencyCode?: unknown } };
+      };
+      const code = json.data?.shop?.currencyCode;
+      if (typeof code === "string" && code) return code;
+    } catch {
+      // Fall through to USD: capture must not fail over a label lookup.
+    }
+  }
+  return "USD";
+}
+
 async function reconcileTrackedCount(shopId: number, dbClient: DbClient) {
   const count = await distinctProductCount(shopId, dbClient);
   await dbClient
@@ -110,10 +136,7 @@ export async function handleProductPriceCapture(
   }
 
   const market = "default";
-  const currency =
-    typeof payload.currency === "string" && payload.currency
-      ? payload.currency
-      : "USD";
+  const currency = await resolveCurrency(admin, payload);
 
   const diffs = await diffVariantPrices(
     shopRecord.id,

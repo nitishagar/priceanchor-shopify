@@ -552,4 +552,86 @@ describe("handleProductPriceCapture", () => {
     expect(result.autoCleared).toBe(0);
     expect(result.autoClearErrors).toEqual(["throttled"]);
   });
+
+  it("labels snapshots with the shop currencyCode when the payload lacks it", async () => {
+    mockDb.query.priceSnapshots.findFirst.mockResolvedValue({ id: 1 });
+    vi.mocked(diffVariantPrices).mockResolvedValue([
+      {
+        variantId: "11",
+        priceMinor: 1799,
+        compareAtMinor: null,
+        previousPriceMinor: 1999,
+        previousCompareAtMinor: null,
+        changed: true,
+      },
+    ]);
+    vi.mocked(recordSnapshot).mockResolvedValue({ id: 10 } as never);
+    vi.mocked(snapshotsForVariant).mockResolvedValue([]);
+    vi.mocked(euPriorPrice).mockReturnValue({
+      lowestMinor: 1999,
+      snapshotCount: 1,
+      windowDays: 30,
+      windowStart: new Date(),
+      asOf: new Date(),
+    });
+    vi.mocked(writeLowestPriceMetafield).mockResolvedValue({
+      ok: true,
+      key: "lowest_price_default",
+    });
+    const graphql = vi.fn().mockResolvedValue({
+      json: async () => ({ data: { shop: { currencyCode: "INR" } } }),
+    });
+
+    const result = await handleProductPriceCapture(
+      SHOP.domain,
+      { graphql },
+      { id: 123, variants: [{ id: 11, price: "17.99" }] },
+      mockDb as never,
+    );
+
+    expect(result.recorded).toBe(1);
+    expect(vi.mocked(recordSnapshot).mock.calls[0][0]).toMatchObject({
+      currency: "INR",
+    });
+    expect(
+      vi.mocked(writeLowestPriceMetafield).mock.calls[0][3],
+    ).toMatchObject({ currency: "INR" });
+  });
+
+  it("prefers payload currency over the shop query", async () => {
+    mockDb.query.priceSnapshots.findFirst.mockResolvedValue({ id: 1 });
+    vi.mocked(diffVariantPrices).mockResolvedValue([
+      {
+        variantId: "11",
+        priceMinor: 1799,
+        compareAtMinor: null,
+        previousPriceMinor: 1999,
+        previousCompareAtMinor: null,
+        changed: true,
+      },
+    ]);
+    vi.mocked(recordSnapshot).mockResolvedValue({ id: 10 } as never);
+    vi.mocked(snapshotsForVariant).mockResolvedValue([]);
+    vi.mocked(euPriorPrice).mockReturnValue({
+      lowestMinor: null,
+      snapshotCount: 0,
+      windowDays: 30,
+      windowStart: new Date(),
+      asOf: new Date(),
+    });
+    const graphql = vi.fn();
+
+    const result = await handleProductPriceCapture(
+      SHOP.domain,
+      { graphql },
+      { id: 123, currency: "EUR", variants: [{ id: 11, price: "17.99" }] },
+      mockDb as never,
+    );
+
+    expect(result.recorded).toBe(1);
+    expect(graphql).not.toHaveBeenCalled();
+    expect(vi.mocked(recordSnapshot).mock.calls[0][0]).toMatchObject({
+      currency: "EUR",
+    });
+  });
 });
