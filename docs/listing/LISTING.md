@@ -64,6 +64,10 @@ No customer data is collected, ever.
 - Privacy: `https://priceanchor.applair.in/privacy`
 - Support: `https://priceanchor.applair.in/support` + `support@applair.in`
 - Pricing info: `https://priceanchor.applair.in/pricing`
+- Demo storefront: `https://seo-generator.myshopify.com/products/the-draft-snowboard`
+  (store password `owstem`, given in testing instructions)
+- Screencast: `https://priceanchor.applair.in/videos/priceanchor-onboarding.mp4`
+  (1280×720, 2fps, 196s; source frames in /tmp, not committed)
 
 ## Screenshots (all 1600×900)
 
